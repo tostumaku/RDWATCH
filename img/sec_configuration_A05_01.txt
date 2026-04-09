@@ -1,0 +1,11 @@
+# VERIFICACIÓN DE CABECERAS DE RESPUESTA HTTP (SEGURIDAD DEL SERVIDOR) - v4.0
+Propósito: Inspección panorámica de cabeceras de blindaje enviadas por el servidor para proteger al cliente.
+Se valida la implementación de directivas contra XSS, Clickjacking y Sniffing.
+--------------------------------------------------------------------------------------------------
+HTTP/1.1 404 Not Found
+Host: localhost:8000
+Date: Thu, 29 Jan 2026 17:06:13 GMT
+Connection: close
+Content-Type: text/html; charset=UTF-8
+Content-Length: 0
+

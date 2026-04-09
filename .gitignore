@@ -1,0 +1,20 @@
+# Entorno de desarrollo
+src/backend/.env
+
+# Dependencias de PHP / Composer
+src/backend/vendor/
+composer.phar
+
+# Logs y bases de datos locales
+*.log
+*.sqlite
+*.db
+
+# Archivos de SO
+.DS_Store
+Thumbs.db
+
+# Temporales IDE
+.idea/
+.vscode/
+*.swp

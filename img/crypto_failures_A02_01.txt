@@ -1,0 +1,10 @@
+# PRUEBA DE ALMACENAMIENTO SEGURO DE CONTRASEÑAS (HASHING BCRYPT) - v4.0
+Propósito: Verificación del blindaje de credenciales mediante el algoritmo Bcrypt (cost=10).
+Se confirma que las contraseñas se almacenan como hashes únicos e irreversibles de 60 caracteres.
+------------------------------------------------------------------------------------------------
+   correo_usuario    |                            contra                            
+---------------------+--------------------------------------------------------------
+ admin@rdwatch.com   | $2y$10$tbzu.K.F8Ebb9gB7kUYNf.kSJjGZIh1s2BLiZeKEvckQGqiP2D3/q
+ cliente@rdwatch.com | $2y$10$hiCtEpcSN1Jv.tUznvebZexy./AYvVErZJG1fVVrL3r8w2AsNIJWu
+(2 rows)
+

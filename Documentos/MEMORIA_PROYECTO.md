@@ -1,0 +1,45 @@
+# 🧠 Memoria del Proyecto - RD_WATCH
+
+Este documento mantiene un registro persistente del contexto, decisiones globales, problemas y estado actual del ecosistema RD_WATCH. Al iniciar cualquier sesión, este es el primer archivo que debe consultarse.
+
+---
+
+## 🎯 1. Objetivo Principal
+- **Visión General:** RD_WATCH es una eCommerce orientada al lujo y la "Alta Relojería" interactiva con venta de productos y prestación de servicios mecánicos.
+- **Enfoque técnico:** Se asume un producto premium mediante Vanilla HTML/JS/CSS, evitando frameworks innecesarios en frontend para mantener velocidad, y con APIs RESTful en PHP puro.
+
+## 🏗️ 2. Stack Tecnológico Estructurado
+- **Backend:** PHP. Integración de APIs alojadas en `src/backend/` controlando inventario, envíos y autenticación.
+- **Frontend:** Vanilla Javascript + DOM Manipulation (`src/js/script.js`), CSS modular por archivo (`style.css`).
+- **Base de Datos:** PostgreSQL. BD real se llama **`db_rdwatch`** (no `rdwatch`). Sistema de inicialización gestionado desde `install_db.bat`.
+
+## 📜 3. Decisiones y Patrones Implementados
+- **Arquitectura de Scripts DB (09/04/2026):** Se unificó el autoinstalador `install_db.bat`. Se aplicó de regla forzar bandera `--pset=pager=off` en todo el pipeline local en windows para que los resultados de queries masivos no congelen la terminal.
+- **Comportamiento Bfcache del Navegador (09/04/2026):** En un entorno nativo sin estado reactivos (tipo React/Vue), el botón de «Atrás» del navegador recarga la vista conservando sus forms interactuables. Para corregir el checkout reteniendo la foto del último voucher, se adoptó el estándar de escuchar globalmente al evento `pageshow` y aplicar reseteo manual.
+- **Herencia UI / Componentes CSS (09/04/2026):** Dado que se utiliza un mismo `<header>` sin componentes React, este perdía la legibilidad al scrollTop=0 en fondos blancos (vs fondo oscuro en Home). Se estableció el estándar CSS `.header--solid` para obligar fondo mate desde el momento de inicialización en páginas adyacentes (`factura.html` / subpáginas).
+- **Funciones PostgreSQL Duplicadas (09/04/2026):** Los scripts de instalación se ejecutaron múltiples veces con firmas distintas (ej: parámetro `SMALLINT` vs `INTEGER`). Esto genera ambigüedad al hacer `SELECT fn_nombre(?)` desde PHP sin cast explícito. **REGLA:** Siempre usar casts explícitos en todas las llamadas PHP → `?::INTEGER`, `?::smallint`, `?::date`. Esta regla aplica a TODAS las APIs.
+- **Encoding UTF-8 en PDO (09/04/2026):** Se agregó `options='--client-encoding=UTF8'` al DSN de PostgreSQL para eliminar doble-codificación de caracteres con tilde (mostraba `Atl\u00c3\u00a1ntico` en vez de `Atlántico`).
+
+## ⚠️ 4. Limitaciones Técnicas Conocidas
+- **Funciones duplicadas en BD:** El instalador generó múltiples overloads de las funciones PostgreSQL. No eliminar las viejas porque pueden romperse otras cosas. La solución es el cast explícito en PHP.
+- **Control de Estado de Formularios:** Acordamos que siempre habrá que manejar y borrar la retención forzada del navegador en entradas tipo `<input type="file">`.
+- **DB Connection:** DB se llama `db_rdwatch`. Verificar siempre `src/backend/.env` si hay errores de conexión.
+
+## ⏳ 5. Tareas Pendientes y Completadas (Snapshot)
+- [x] Corregir instalador `.bat` y `.env` para sincronismo local.
+- [x] Reparar header fantasma por defecto en facturación (`.header--solid`).
+- [x] Corregir retención de variables DOM estáticas en checkout (Bfcache).
+- [x] Fix ciudades no cargan (`fn_geo_ciudades` ambigua → `?::INTEGER` en PHP).
+- [x] Fix no se pueden crear reseñas (`fn_reviews_create` ambigua → `?::INTEGER` en PHP).
+- [x] Fix checkout falla (`fn_checkout_process` ambigua → `?::INTEGER` en PHP).
+- [x] Fix encoding UTF-8 doble en respuestas JSON (DSN PDO con `--client-encoding=UTF8`).
+- [x] Fix carrito falla al agregar producto (`fn_cart_get_or_create` ambigua → `::INTEGER` en PHP + casts en toda la API).
+- [x] **Limpieza definitiva BD**: Se eliminaron los 70 overloads obsoletos de 46 funciones ejecutando `sql/cleanup_overloads.sql`. La BD pasó de 143 a 73 funciones. Ya NO hay ambigüedad en ninguna función.
+- [x] Fix eliminar productos/marcas/categorías/servicios del admin: los deletes pasaban 2 params (ID + user_id) pero las funciones en BD quedaron con 1 param. Corregido en `marcas.php`, `categorias.php`, `productos.php`, `servicios.php`. También se fijó `validateCsrfToken()` → `validateCsrfToken(null, true)` en DELETE de categorías/subcategorías. Cast `::BIGINT` en servicios porque su firma es `bigint`.
+- [x] **Fix visual soft-delete**: El trigger de PostgreSQL se arregló para que ahora SÍ cambie el `estado = false` (antes se mantenía en `true` y causaba que el admin lo siguiera viendo como activo a pesar de borrarlo). Se mantiene el diseño visual donde el registro borrado se oscurece y cambia su botón a "Reactivar".
+- [x] **Consolidación para Producción**: El código del nuevo trigger solucionado (`fun_audit_rdwatch` con manejo dinámico del campo estado) se consolidó definitivamente en `sql/triggers/audit_trail.sql`. Se eliminaron todos los scripts "parche" temporales (`fix_audit_trigger.sql`, `fix_estado_huerfanos.sql`, `cleanup_overloads.sql`, `test_trigger.sql`) dejando el repositorio limpio. Al ejecutar `install_db.bat` en un entorno de producción o limpio, la base de datos se instalará directamente sin overloads y con el trigger de soft-delete funcionando correctamente.
+- [ ] Reiniciar Apache/XAMPP para que tome efecto el fix de encoding UTF-8 en el DSN de PDO.
+- [ ] Probar flujo completo en el navegador (carrito → checkout → reseña → servicio → ciudades → eliminar items desde admin).
+
+---
+*Última edición técnica: Jueves 09 Abril 2026 — Panel de cliente (Diagnóstico overloads PostgreSQL)*

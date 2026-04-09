@@ -1,0 +1,20 @@
+# 🛡️ RD-Watch Backend Security Policy (A05)
+
+# 1. Denegar el listado de directorios
+Options -Indexes
+
+# 2. Protección de archivos sensibles
+<FilesMatch "\.(env|log|sql|bak|sh|bat)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# 3. Denegar acceso directo a archivos de configuración específicos
+<Files config.php>
+    Order allow,deny
+    Deny from all
+    # Permitir que PHP lo incluya internamente
+</Files>
+
+# 4. Forzar UTF-8 en todas las respuestas
+AddDefaultCharset UTF-8

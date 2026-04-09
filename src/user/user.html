@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Panel - RD WATCH</title>
+    <meta name="description" content="Panel de usuario de Relojería Durán">
+
+    <!-- Fuentes -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        integrity="sha384-/o6I2CkkWC//PSjvWC/eYN7l3xM3tJm8ZzVkCOfp//W05QcE3mlGskpoHB6XqI+B" crossorigin="anonymous" />
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="user.css?v=1.1">
+</head>
+
+<body>
+    <div id="notification" class="notification"></div>
+
+    <header class="header">
+        <div class="header-container">
+            <a href="../../index.html" class="header-logo">
+                <i class="logo-icon fas fa-clock"></i> RD <span
+                    style="font-weight:400;color:var(--primary-light)">WATCH</span>
+            </a>
+            <nav class="main-nav">
+                <ul>
+                    <li><a class="nav-link active" data-section="inicio">Inicio</a></li>
+                    <li><a class="nav-link" data-section="perfilForm">Perfil</a></li>
+                    <li><a class="nav-link" data-section="pedidoForm">Pedidos</a></li>
+                    <li><a class="nav-link" data-section="direccionForm">Direcciones</a></li>
+                    <li><a class="nav-link" data-section="citaForm">Citas</a></li>
+                    <li><a class="nav-link" data-section="servicioForm">Servicios</a></li>
+                    <li><a href="../comercio.html" class="nav-link">Comercio</a></li>
+                    <li><a class="nav-link" id="logoutLink">Cerrar Sesión</a></li>
+                </ul>
+            </nav>
+            <button class="mobile-menu-btn" aria-label="Menú móvil">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <section id="inicio" class="welcome-section">
+                <div class="section-header">
+                    <h2 class="section-heading">Bienvenido, <span id="userName">Anderson</span> 👋</h2>
+                    <p class="section-subheading">Aquí puedes consultar y administrar tu información personal, pedidos y
+                        servicios.</p>
+                    <div class="section-divider">
+                        <div class="divider-line"></div>
+                        <i class="fas fa-user divider-icon"></i>
+                        <div class="divider-line"></div>
+                    </div>
+                </div>
+
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <h3>Califícanos</h3>
+                        <p>Cuéntanos tu experiencia y ayuda a otros clientes.</p>
+                        <button class="button button-primary" id="btnResena" data-section="resenaForm">
+                            <i class="fas fa-pencil-alt"></i> Escribir Reseña
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3>Mi Perfil</h3>
+                        <p><strong>Nombre:</strong> <span id="perfilNombre">Anderson Gomez</span></p>
+                        <p><strong>Email:</strong> <span id="perfilEmail">anderson@email.com</span></p>
+                        <button class="button button-primary" id="btnEditarPerfil" data-section="perfilForm">
+                            <i class="fas fa-edit"></i> Editar Perfil
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-shopping-bag"></i>
+                        </div>
+                        <h3>Mis Pedidos</h3>
+                        <p>Tienes <strong id="pedidosActivos">0 pedidos activos</strong> y <strong
+                                id="pedidosCompletados">0 completados</strong>.</p>
+                        <button class="button button-primary" id="btnHistorial" data-section="pedidoForm">
+                            <i class="fas fa-list"></i> Ver Historial
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h3>Direcciones</h3>
+                        <p>Dirección principal:<br><span id="direccionPrincipal">Calle 123, Bogotá</span></p>
+                        <button class="button button-primary" id="btnDirecciones" data-section="direccionForm">
+                            <i class="fas fa-cog"></i> Gestionar
+                        </button>
+                    </div>
+
+
+
+                    <div class="card">
+                        <div class="card-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <h3>Servicios</h3>
+                        <p>Tienes <strong id="citasActivas">0 citas pendientes</strong>.</p>
+                        <div class="card-actions" style="display: flex; gap: 10px;">
+                            <button class="button button-primary" id="btnSolicitarServicio" data-section="servicioForm"
+                                style="flex:1">
+                                <i class="fas fa-calendar-plus"></i> Solicitar
+                            </button>
+                            <button class="button button-secondary" id="btnCitasHistorial" data-section="citaForm"
+                                style="flex:1">
+                                <i class="fas fa-history"></i> Historial
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="perfilForm" class="form-section">
+                <h2><i class="fas fa-user-edit"></i> Editar Perfil</h2>
+                <form id="formPerfil" class="form-grid">
+                    <div>
+                        <label>Nombre Completo</label>
+                        <input type="text" id="inputNombre" value="Anderson Gomez" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+                            title="Solo letras y espacios" minlength="3" maxlength="100" required>
+                    </div>
+                    <div>
+                        <label>Email</label>
+                        <input type="email" id="inputEmail" value="anderson@email.com" required>
+                    </div>
+                    <div>
+                        <label>Teléfono</label>
+                        <input type="tel" id="inputTelefono" value="3001112233" pattern="[0-9]{10}"
+                            title="Debe contener exactamente 10 dígitos numéricos" maxlength="10" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="button button-secondary btn-cancelar">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="button button-primary">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section id="pedidoForm" class="form-section">
+                <h2><i class="fas fa-box-open"></i> Historial de Pedidos</h2>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID Pedido</th>
+                                <th>Producto</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyPedidos">
+                            <!-- Los pedidos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="button button-secondary btn-cancelar">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                </div>
+            </section>
+
+            <section id="citaForm" class="form-section">
+                <h2><i class="fas fa-calendar-check"></i> Mis Citas y Servicios</h2>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Servicio</th>
+                                <th>Fecha</th>
+                                <th>Prioridad</th>
+                                <th>Estado</th>
+                                <th>Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyCitas">
+                            <!-- Las citas se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="button button-secondary btn-cancelar">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                    <button type="button" class="button button-primary" onclick="showSection('servicioForm')">
+                        <i class="fas fa-plus"></i> Nueva Cita
+                    </button>
+                </div>
+            </section>
+
+            <section id="direccionForm" class="form-section">
+                <h2><i class="fas fa-map-marked-alt"></i> Gestionar Direcciones</h2>
+                <form id="formDireccion" class="form-grid">
+                    <div>
+                        <label>Dirección Principal</label>
+                        <input type="text" id="inputDireccion" value="" placeholder="Ej: Calle 123 #45-67"
+                            pattern="^[a-zA-Z0-9\s#\-\.]+$" title="Solo letras, números, espacios, #, - y ."
+                            minlength="5" maxlength="150" required>
+                    </div>
+
+                    <div>
+                        <label>Departamento</label>
+                        <select id="inputDepartamento" required>
+                            <option value="">Seleccione departamento...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Ciudad</label>
+                        <select id="inputCiudad" required disabled>
+                            <option value="">Primero seleccione departamento</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Código Postal</label>
+                        <input type="text" id="inputPostal" value="" placeholder="Ej: 110111" pattern="[0-9]{5,6}"
+                            title="Debe tener 5 o 6 dígitos numéricos" maxlength="6" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="button button-secondary btn-cancelar">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="button button-primary">
+                            <i class="fas fa-save"></i> Guardar Dirección
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+
+
+            <section id="servicioForm" class="form-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-tools"></i> Solicitar Servicio</h2>
+                    <p class="section-subheading">Elige uno de nuestros servicios exclusivos</p>
+                    <div class="section-divider">
+                        <div class="divider-line"></div>
+                        <i class="fas fa-wrench divider-icon"></i>
+                        <div class="divider-line"></div>
+                    </div>
+                </div>
+
+                <div class="services-grid" id="user-services-grid">
+                    <!-- Servicios cargados dinámicamente -->
+                    <div style="grid-column: 1/-1; text-align: center;">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando servicios...
+                    </div>
+                </div>
+
+                <form id="formSolicitudServicio" class="form-grid hidden" style="margin-top: var(--spacing-xl);">
+                    <h3 style="color: var(--primary-dark); text-align: center;">Detalles de la Solicitud</h3>
+
+                    <input type="hidden" id="servicioSeleccionadoId">
+
+                    <div id="infoResumenServicio"></div>
+
+                    <div>
+                        <label>Servicio Seleccionado</label>
+                        <input type="text" id="servicioSeleccionado" readonly>
+                    </div>
+
+                    <div>
+                        <label>Fecha Preferida</label>
+                        <input type="date" id="fechaPreferida" required>
+                    </div>
+
+                    <div>
+                        <label>Prioridad</label>
+                        <select id="prioridad">
+                            <option value="normal">Normal</option>
+                            <option value="alta">Alta</option>
+                            <option value="baja">Baja</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Notas Adicionales (Opcional)</label>
+                        <textarea id="notasServicio" rows="4"
+                            placeholder="Describe el problema o requerimiento específico..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="button button-secondary" id="btnCancelarSolicitud">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="button button-primary">
+                            <i class="fas fa-paper-plane"></i> Enviar Solicitud
+                        </button>
+                    </div>
+                </form>
+
+                <div class="form-actions" style="margin-top: var(--spacing-lg);">
+                    <button type="button" class="button button-secondary btn-cancelar">
+                        <i class="fas fa-arrow-left"></i> Volver al Inicio
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <section id="resenaForm" class="form-section">
+            <h2><i class="fas fa-star"></i> Tu Opinión Cuenta</h2>
+            <form id="formResena" class="form-grid">
+
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <label>Selecciona tu calificación</label>
+                    <div class="star-rating">
+                        <input type="radio" id="star5" name="rating" value="5" required /><label for="star5"
+                            title="Excelente">★</label>
+                        <input type="radio" id="star4" name="rating" value="4" /><label for="star4"
+                            title="Bueno">★</label>
+                        <input type="radio" id="star3" name="rating" value="3" /><label for="star3"
+                            title="Regular">★</label>
+                        <input type="radio" id="star2" name="rating" value="2" /><label for="star2"
+                            title="Malo">★</label>
+                        <input type="radio" id="star1" name="rating" value="1" /><label for="star1"
+                            title="Pésimo">★</label>
+                    </div>
+                </div>
+
+                <div>
+                    <label>Tu comentario</label>
+                    <textarea id="resenaTexto" rows="4" placeholder="¿Qué te pareció nuestro servicio?"
+                        required></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="button button-secondary btn-cancelar">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="button button-primary">
+                        <i class="fas fa-paper-plane"></i> Publicar Reseña
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <!-- JavaScript -->
+    <script src="../js/config.js"></script>
+    <script src="../js/notifications.js"></script>
+    <script src="../js/security.js"></script>
+    <script src="user.js?v=1.1"></script>
+</body>
+
+</html>

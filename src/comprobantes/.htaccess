@@ -1,0 +1,8 @@
+# Seguridad: deshabilitar listado de archivos
+Options -Indexes
+
+# Solo permitir imágenes (acceso directo bloqueado de igual forma
+# ya que Apache no servirá la carpeta como índice)
+<FilesMatch "\.(php|html|htm|js|sh|bat)$">
+    Deny from all
+</FilesMatch>
