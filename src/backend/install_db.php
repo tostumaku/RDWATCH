@@ -86,12 +86,30 @@ try {
     echo "[5/5] Ejecutando scripts SQL...\n";
     echo str_repeat("-", 60) . "\n";
 
+    // Forzar encoding UTF-8 en la conexión
+    $pdo->exec("SET client_encoding TO 'UTF8'");
+
     $scripts = [
+        // 1. Schema
         'sql/schema/database_rdwatch_3_0.sql' => 'Schema principal (tablas)',
+        // 2. Migraciones
+        'sql/oauth_migration.sql' => 'Migración OAuth',
+        // 3. Triggers
+        'sql/triggers/audit_trail.sql' => 'Triggers de auditoría',
+        // 4. Seeds
         'sql/scripts/00_geodata.sql' => 'Departamentos y ciudades',
         'sql/scripts/01_users_base.sql' => 'Usuarios base',
-        'sql/scripts/02_populate_catalog.sql' => 'Catálogo (marcas, productos, servicios)',
-        'sql/scripts/05_seeders.sql' => 'Seeders adicionales'
+        'sql/scripts/02_users_extended.sql' => 'Usuarios extendidos',
+        'sql/scripts/03_catalog.sql' => 'Catálogo (marcas, productos, servicios)',
+        'sql/scripts/04_activity.sql' => 'Actividad (órdenes, pagos)',
+        'sql/scripts/05_reviews.sql' => 'Reseñas',
+        'sql/scripts/06_configuracion_admin_pending.sql' => 'Configuración admin',
+        // 5. Funciones backend
+        'sql/logica_backend/auth_security.sql' => 'Funciones: Auth y Seguridad',
+        'sql/logica_backend/catalog_master.sql' => 'Funciones: Catálogo',
+        'sql/logica_backend/client_panel.sql' => 'Funciones: Panel Cliente',
+        'sql/logica_backend/ecommerce_core.sql' => 'Funciones: E-commerce Core',
+        'sql/logica_backend/admin_reports.sql' => 'Funciones: Reportes Admin',
     ];
 
     foreach ($scripts as $scriptPath => $description) {

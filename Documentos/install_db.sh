@@ -23,6 +23,7 @@ DB_PORT=${DB_PORT:-5432}
 DB_NAME=${DB_NAME:-db_rdwatch}
 DB_USER=${DB_USER:-postgres}
 export PGPASSWORD=${DB_PASS}
+export PGCLIENTENCODING=UTF8
 
 echo "[*] Cerrando conexiones activas y recreando la base de datos '$DB_NAME'..."
 
@@ -59,15 +60,19 @@ run_sql() {
 }
 
 echo ""
-echo "[1/4] Estructura y Esquema (Tablas)"
+echo "[1/5] Estructura y Esquema (Tablas)"
 run_sql "sql/schema/database_rdwatch_3_0.sql"
 
 echo ""
-echo "[2/4] Triggers y Auditoría"
+echo "[2/5] Migraciones (OAuth, etc.)"
+run_sql "sql/oauth_migration.sql"
+
+echo ""
+echo "[3/5] Triggers y Auditoría"
 run_sql "sql/triggers/audit_trail.sql"
 
 echo ""
-echo "[3/4] Poblando Datos (Datos Semilla)"
+echo "[4/5] Poblando Datos (Datos Semilla)"
 run_sql "sql/scripts/00_geodata.sql"
 run_sql "sql/scripts/01_users_base.sql"
 run_sql "sql/scripts/02_users_extended.sql"
@@ -77,7 +82,7 @@ run_sql "sql/scripts/05_reviews.sql"
 run_sql "sql/scripts/06_configuracion_admin_pending.sql"
 
 echo ""
-echo "[4/4] Lógica Backend Refactorizada (Funciones PostgreSQL)"
+echo "[5/5] Lógica Backend Refactorizada (Funciones PostgreSQL)"
 run_sql "sql/logica_backend/auth_security.sql"
 run_sql "sql/logica_backend/catalog_master.sql"
 run_sql "sql/logica_backend/ecommerce_core.sql"

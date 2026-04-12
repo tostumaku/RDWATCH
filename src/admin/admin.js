@@ -1342,17 +1342,19 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     tbodySubcategorias.innerHTML = filtered.map(s => `
-    <tr>
+    <tr class="${!s.estado ? 'row-inactive' : ''}">
       <td>${s.id_subcategoria}</td>
       <td>${s.nom_categoria}</td>
       <td>${s.nom_subcategoria}</td>
+      <td><span class="badge ${s.estado ? 'active' : 'inactive'}">${s.estado ? 'Activa' : 'Inactiva'}</span></td>
       <td class="actions">
         <button class="button button-outline" onclick="editarSubcategoria(${s.id_categoria}, ${s.id_subcategoria})">
           <i class="fas fa-pen"></i>
         </button>
-        <button class="button button-danger" onclick="eliminarSubcategoria(${s.id_categoria}, ${s.id_subcategoria})">
-          <i class="fas fa-trash"></i>
-        </button>
+        ${s.estado
+          ? `<button class="button button-danger" onclick="desactivarSubcategoria(${s.id_categoria}, ${s.id_subcategoria})" title="Desactivar"><i class="fas fa-ban"></i></button>`
+          : `<button class="button button-success" onclick="reactivarSubcategoria(${s.id_categoria}, ${s.id_subcategoria})" title="Reactivar"><i class="fas fa-undo"></i></button>`
+        }
       </td>
     </tr>`).join('');
   }
@@ -1404,8 +1406,8 @@ document.addEventListener("DOMContentLoaded", () => {
     openModal("#modalSubcategoria");
   }
 
-  async function eliminarSubcategoria(idCat, idSub) {
-    if (!await showConfirm('¿Eliminar subcategoría?', { danger: true, confirmText: 'Eliminar', cancelText: 'Cancelar' })) return;
+  async function desactivarSubcategoria(idCat, idSub) {
+    if (!await showConfirm('¿Desactivar esta subcategoría? Los productos activos vinculados deberán desactivarse primero.', { danger: true, confirmText: 'Desactivar', cancelText: 'Cancelar' })) return;
 
     try {
       const res = await secureFetch(`${API_BASE}/categorias.php?action=subcategoria`, {
@@ -1420,15 +1422,44 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
 
       if (data.ok) {
-        showNotification('Subcategoría eliminada correctamente');
+        showNotification('Subcategoría desactivada. Puedes reactivarla desde el panel.');
         await cargarSubcategorias();
         await cargarCatalogosProducto();
       } else {
-        showAlert(data.msg || 'Error al eliminar subcategoría', 'Bloqueo de Seguridad');
+        showAlert(data.msg || 'No se pudo desactivar la subcategoría', 'Bloqueo de Seguridad');
       }
     } catch (e) {
       console.error(e);
-      showAlert('Error técnico al intentar eliminar: ' + e.message, 'Fallo Crítico');
+      showAlert('Error técnico al intentar desactivar: ' + e.message, 'Fallo Crítico');
+    }
+  }
+
+  async function reactivarSubcategoria(idCat, idSub) {
+    const s = subcategorias.find(x => x.id_categoria === idCat && x.id_subcategoria === idSub);
+    if (!s) return;
+    if (!await showConfirm('¿Reactivar esta subcategoría? Volverá a estar disponible en el catálogo.', { confirmText: 'Reactivar', cancelText: 'Cancelar' })) return;
+    try {
+      const res = await secureFetch(`${API_BASE}/categorias.php?action=subcategoria`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_categoria: s.id_categoria,
+          id_subcategoria: s.id_subcategoria,
+          nom_subcategoria: s.nom_subcategoria,
+          estado: true
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showNotification('✅ Subcategoría reactivada correctamente.');
+        await cargarSubcategorias();
+        await cargarCatalogosProducto();
+      } else {
+        showAlert(data.msg || 'Error al reactivar subcategoría', 'Error');
+      }
+    } catch (e) {
+      console.error(e);
+      showAlert('Error técnico al reactivar: ' + e.message, 'Fallo Crítico');
     }
   }
 
@@ -1499,7 +1530,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.editarSubcategoria = editarSubcategoria;
-  window.eliminarSubcategoria = eliminarSubcategoria;
+  window.desactivarSubcategoria = desactivarSubcategoria;
+  window.reactivarSubcategoria = reactivarSubcategoria;
 
   /* =======================
    * GESTIÓN DE CITAS

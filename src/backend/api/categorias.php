@@ -95,19 +95,21 @@ try {
                 echo json_encode(json_decode($stmt->fetchColumn(), true));
                 break;
 
-            // ACTUALIZAR SUBCATEGORÍA
+            // ACTUALIZAR SUBCATEGORÍA (nombre y/o estado)
             case 'PUT':
                 requireRole('admin');
                 validateCsrfToken(null, true);
                 $data = getCachedJsonInput();
 
-                $stmt = $pdo->prepare("SELECT fn_cat_update_subcategoria(?, ?, ?)");
-                $stmt->execute([$data['id_categoria'], $data['id_subcategoria'], $data['nom_subcategoria']]);
+                $estado = isset($data['estado']) ? ($data['estado'] ? true : false) : true;
+
+                $stmt = $pdo->prepare("SELECT fn_cat_update_subcategoria(?::INTEGER, ?::INTEGER, ?, ?)");
+                $stmt->execute([$data['id_categoria'], $data['id_subcategoria'], $data['nom_subcategoria'], $estado ? 'true' : 'false']);
                 echo json_encode(json_decode($stmt->fetchColumn(), true));
                 break;
 
-            // ELIMINAR SUBCATEGORÍA (soft delete con protección de productos activos)
-            // Necesita AMBOS IDs porque es PK compuesta
+            // DESACTIVAR SUBCATEGORÍA (soft delete con protección de productos activos)
+            // Necesita AMBOS IDs porque es PK compuesta + usuario para auditoría
             case 'DELETE':
                 requireRole('admin');
                 validateCsrfToken(null, true);
@@ -117,12 +119,12 @@ try {
                 $idSub = $data['id_subcategoria'] ?? null;
 
                 if ($idCat === null || $idSub === null) {
-                    echo json_encode(['ok' => false, 'msg' => 'Faltan IDs de referencia para el borrado']);
+                    echo json_encode(['ok' => false, 'msg' => 'Faltan IDs de referencia para la desactivación']);
                     exit;
                 }
 
-                $stmt = $pdo->prepare("SELECT fn_cat_delete_subcategoria(?::INTEGER, ?::INTEGER)");
-                $stmt->execute([$idCat, $idSub]);
+                $stmt = $pdo->prepare("SELECT fn_cat_delete_subcategoria(?::INTEGER, ?::INTEGER, ?)");
+                $stmt->execute([$idCat, $idSub, 'admin_panel']);
                 echo json_encode(json_decode($stmt->fetchColumn(), true));
                 break;
         }

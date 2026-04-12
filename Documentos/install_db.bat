@@ -1,13 +1,12 @@
 @echo off
-title RDWATCH - Instalador Maestro v3.1
+title RDWATCH - Instalador Maestro v3.2
 color 0B
 setlocal enabledelayedexpansion
 
 echo =====================================================
-echo    RDWATCH - INSTALADOR DE BASE DE DATOS v3.1
-echo    Cambios v3.1: Modulo Configuracion funcional
-echo    (tab_Configuracion, fn_admin_get/update_settings,
-echo     fn_admin_get_hash, fn_admin_set_password)
+echo    RDWATCH - INSTALADOR DE BASE DE DATOS v3.2
+echo    Cambios v3.2: Fix encoding UTF-8, subcategorias
+echo    soft-delete, limpieza de overloads
 echo =====================================================
 
 :: --- CONFIGURACIÓN ---
@@ -16,9 +15,19 @@ set DB_HOST=localhost
 set DB_NAME=db_rdwatch
 set DB_USER=postgres
 set PGPASSWORD=toby,2003
+set PGCLIENTENCODING=UTF8
 
-:: Comando base para psql
+:: Comando base para psql ejecutando sobre la BD del proyecto
 set PSQL_CMD=%PG_PSQL% -h %DB_HOST% -U %DB_USER% -d %DB_NAME% -q --pset=pager=off
+:: Comando sobre base 'postgres' (para operaciones de nivel BD)
+set PSQL_ADMIN=%PG_PSQL% -h %DB_HOST% -U %DB_USER% -d postgres -q --pset=pager=off
+
+echo.
+echo [0/5] Recreando base de datos limpia...
+%PSQL_ADMIN% -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%DB_NAME%' AND pid <> pg_backend_pid();" 2>nul
+%PSQL_ADMIN% -c "DROP DATABASE IF EXISTS \"%DB_NAME%\";" || goto :error
+%PSQL_ADMIN% -c "CREATE DATABASE \"%DB_NAME%\";" || goto :error
+echo    Base de datos '%DB_NAME%' creada desde cero.
 
 echo.
 echo [1/5] Cargando Esquema Base...
@@ -60,7 +69,10 @@ echo    - insertando: 06_configuracion_admin_pending.sql
 
 echo.
 echo =====================================================
-echo    INSTALACION COMPLETADA EXITOSAMENTE (V3.2-LOCAL)
+echo    INSTALACION COMPLETADA EXITOSAMENTE (V3.2)
+echo    - Base de datos limpia (sin overloads)
+echo    - Encoding UTF-8 correcto (tildes ok)
+echo    - Soft-delete en subcategorias funcional
 echo =====================================================
 pause
 exit /b 0

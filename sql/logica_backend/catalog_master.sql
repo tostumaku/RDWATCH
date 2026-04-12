@@ -820,12 +820,14 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION fn_cat_update_subcategoria(
     p_id_cat  INTEGER,  -- ID del padre
     p_id_sub  INTEGER,  -- ID del hijo
-    p_nombre  TEXT      -- Nuevo nombre
+    p_nombre  TEXT,     -- Nuevo nombre
+    p_estado  BOOLEAN DEFAULT TRUE  -- Nuevo estado (permite reactivar)
 ) RETURNS JSON AS $$
 BEGIN
     -- DML focalizado por clave compuesta.
     UPDATE tab_Subcategorias SET 
         nom_subcategoria = p_nombre,
+        estado = p_estado,
         fec_update = NOW(), 
         usr_update = 'admin_editor'
     WHERE id_categoria = p_id_cat AND id_subcategoria = p_id_sub;
