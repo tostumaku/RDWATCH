@@ -716,8 +716,22 @@ function initGalleryCarousel() {
 
     let currentIndex = 0;
 
+    const handleVideoAutoplay = () => {
+        slides.forEach((slide, index) => {
+            const video = slide.querySelector('video');
+            if (video) {
+                if (index === currentIndex) {
+                    video.play().catch(e => console.warn('Autoplay prevented', e));
+                } else {
+                    video.pause();
+                }
+            }
+        });
+    };
+
     const updateSlidePosition = () => {
         track.style.transform = `translateX(-${currentIndex * 100}%)`;
+        handleVideoAutoplay();
     };
 
     if (nextBtn) {
@@ -733,6 +747,24 @@ function initGalleryCarousel() {
             updateSlidePosition();
         });
     }
+
+    // Usar IntersectionObserver para reproducir el video inicial cuando sea visible
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                handleVideoAutoplay();
+            } else {
+                slides.forEach(slide => {
+                    const video = slide.querySelector('video');
+                    if (video) video.pause();
+                });
+            }
+        });
+    }, { threshold: 0.5 });
+    
+    // Observamos la sección de la galería
+    const section = document.getElementById('gallery-section');
+    if(section) observer.observe(section);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

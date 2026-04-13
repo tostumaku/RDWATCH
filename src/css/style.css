@@ -884,7 +884,7 @@ section {
 
 .image-frame {
     padding: var(--spacing-sm);
-    background-color: var(--white);
+    background-color: var(--secondary-color);
     border: 3px solid var(--secondary-color);
     /* Border now on frame */
     box-shadow: var(--shadow-lg);
@@ -893,11 +893,13 @@ section {
     /* Removed max-height to prevent cropping */
     display: flex;
     justify-content: center;
+    width: fit-content;
+    margin: 0 auto;
 }
 
 .about-us-image {
     display: block;
-    width: 100%;
+    width: auto;
     height: auto;
     /* Natural height */
     max-height: 500px;
