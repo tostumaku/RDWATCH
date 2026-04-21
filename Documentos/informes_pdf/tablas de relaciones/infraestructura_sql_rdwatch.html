@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Backend Code Portal - RD WATCH V2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: rgba(22, 27, 34, 0.9);
+            --accent-color: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: rgba(48, 54, 61, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --success: #238636;
+            --warning: #d29922;
+            --error: #f85149;
+            --atomic: #bc8cff;
+            --code-bg: #010409;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 350px;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #58a6ff, #bc8cff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-box {
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 0.7rem 1rem 0.7rem 2.5rem;
+            border-radius: 10px;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            opacity: 0.5;
+        }
+
+        .module-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding-right: 5px;
+        }
+
+        .module-card {
+            padding: 0.8rem;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .module-card:hover {
+            background: rgba(88, 166, 255, 0.05);
+            border-color: rgba(88, 166, 255, 0.2);
+        }
+
+        .module-card.active {
+            background: rgba(88, 166, 255, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .module-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .module-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 10%, #161b22 0%, #0d1117 100%);
+        }
+
+        /* --- Code Viewer Area --- */
+        #code-area {
+            height: 50%;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            background: var(--code-bg);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-header {
+            padding: 0.7rem 1.5rem;
+            background: rgba(48, 54, 61, 0.3);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .code-container {
+            flex: 1;
+            overflow: auto;
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #d1d5db;
+        }
+
+        pre {
+            margin: 0;
+            tab-size: 4;
+        }
+
+        .keyword {
+            color: #ff7b72;
+            font-weight: 700;
+        }
+
+        .function {
+            color: #d2a8ff;
+        }
+
+        .comment {
+            color: #8b949e;
+            font-style: italic;
+        }
+
+        .inline-comment {
+            padding-left: 2rem;
+            /* Aleja los comentarios a la derecha */
+        }
+
+        .string {
+            color: #a5d6ff;
+        }
+
+        .type {
+            color: #ffa657;
+        }
+
+        /* --- Detail Table Area --- */
+        #detail-area {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.8rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--accent-color);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.2);
+            text-align: left;
+            padding: 12px 15px;
+            color: var(--text-dim);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
+            cursor: pointer;
+        }
+
+        tr:hover {
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        code-inline {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: white;
+            display: inline-block;
+        }
+
+        .tag-select {
+            background: var(--accent-color);
+        }
+
+        .tag-insert {
+            background: var(--success);
+        }
+
+        .tag-update {
+            background: var(--warning);
+            color: black;
+        }
+
+        .tag-delete {
+            background: var(--error);
+        }
+
+        .tag-atomic {
+            background: var(--atomic);
+        }
+
+        .php-badge {
+            font-size: 0.7rem;
+            background: #30363d;
+            color: #8b949e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            margin-top: 5rem;
+            color: var(--text-dim);
+        }
+
+        .btn-view-code {
+            padding: 4px 10px;
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            border-radius: 15px;
+            color: var(--accent-color);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .highlight-line {
+            background: rgba(88, 166, 255, 0.1);
+            border-left: 2px solid var(--accent-color);
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <h1>RD WATCH V2</h1>
+        <p style="font-size: 0.75rem; color: var(--text-dim);">Portal de Infraestructura y Datos Semilla</p>
+
+        <div class="search-box">
+            <input type="text" id="global-search" placeholder="Buscar script o tabla de destino......">
+        </div>
+
+        <div class="module-list" id="module-list">
+            <!-- Populated via JS -->
+        </div>
+
+        <div
+            style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.7rem; color: var(--text-dim);">
+            <p>Estado: Sistema Unificado</p>
+            <p>© 2026 Relojería Durán</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="code-area">
+            <div class="code-header">
+                <span id="code-filename">Seleccione una función para inspeccionar</span>
+                <span id="code-stats">PL/pgSQL</span>
+            </div>
+            <div class="code-container">
+                <pre id="code-display" class="fade-in">-- Haga clic en una función de la tabla inferior para ver su lógica SQL completa.
+-- Aquí se mostrará la implementación detallada de PostgreSQL.</pre>
+            </div>
+        </div>
+
+        <div id="detail-area">
+            <!-- Contenido dinámico aquí -->
+            <div class="empty-state">
+                <p>Seleccione un módulo en la barra lateral para comenzar</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const functionCode = {
+            '00_geodata.sql': `--INSERTS DEPARTAMENTOS
+
+-- Región Amazonía
+SELECT fun_insert_departamentos(1, 'Amazonas', 'CO-AMA');             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(8, 'Caquetá', 'CO-CAQ');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(15, 'Guainía', 'CO-GUA');             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(16, 'Guaviare', 'CO-GUV');            -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(23, 'Putumayo', 'CO-PUT');            -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(31, 'Vaupés', 'CO-VAU');              -- Instrucción de script (DML/Procedural)
+
+-- Región Andina
+SELECT fun_insert_departamentos(2, 'Antioquia', 'CO-ANT');            -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(6, 'Boyacá', 'CO-BOY');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(7, 'Caldas', 'CO-CAL');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(14, 'Cundinamarca', 'CO-CUN');        -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(17, 'Huila', 'CO-HUI');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(22, 'Norte de Santander', 'CO-NSA');    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(24, 'Quindío', 'CO-QUI');             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(25, 'Risaralda', 'CO-RIS');           -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(27, 'Santander', 'CO-SAN');           -- Tu región
+SELECT fun_insert_departamentos(29, 'Tolima', 'CO-TOL');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(33, 'Bogotá D.C.', 'CO-DC');          -- Instrucción de script (DML/Procedural)
+
+-- Región Orinoquía
+SELECT fun_insert_departamentos(3, 'Arauca', 'CO-ARA');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(9, 'Casanare', 'CO-CAS');             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(20, 'Meta', 'CO-MET');                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(32, 'Vichada', 'CO-VIC');             -- Instrucción de script (DML/Procedural)
+
+-- Región Caribe
+SELECT fun_insert_departamentos(4, 'Atlántico', 'CO-ATL');            -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(5, 'Bolívar', 'CO-BOL');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(11, 'Cesar', 'CO-CES');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(13, 'Córdoba', 'CO-COR');             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(18, 'La Guajira', 'CO-LAG');          -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(19, 'Magdalena', 'CO-MAG');           -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(26, 'San Andrés y Providencia', 'CO-SAP');    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(28, 'Sucre', 'CO-SUC');               -- Instrucción de script (DML/Procedural)
+
+-- Región Pacífica
+SELECT fun_insert_departamentos(10, 'Cauca', 'CO-CAU');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(12, 'Chocó', 'CO-CHO');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(21, 'Nariño', 'CO-NAR');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_departamentos(30, 'Valle del Cauca', 'CO-VAC');     -- Instrucción de script (DML/Procedural)
+
+--INSERTS CIUDADES
+-- 1. Amazonas
+SELECT fun_insert_ciudades(1, 1, 'Leticia', '910001');                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(2, 1, 'Puerto Nariño', '910010');          -- Instrucción de script (DML/Procedural)
+
+-- 2. Antioquia (Selección principal)
+SELECT fun_insert_ciudades(3, 2, 'Medellín', '050001');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(4, 2, 'Bello', '051050');                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(5, 2, 'Envigado', '055420');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(6, 2, 'Itagüí', '055410');                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(7, 2, 'Rionegro', '054040');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(8, 2, 'Apartadó', '057860');               -- Instrucción de script (DML/Procedural)
+
+-- 3. Arauca
+SELECT fun_insert_ciudades(9, 3, 'Arauca', '810001');                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(10, 3, 'Saravena', '815010');              -- Instrucción de script (DML/Procedural)
+
+-- 4. Atlántico
+SELECT fun_insert_ciudades(11, 4, 'Barranquilla', '080001');          -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(12, 4, 'Soledad', '083001');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(13, 4, 'Malambo', '083010');               -- Instrucción de script (DML/Procedural)
+
+-- 5. Bolívar
+SELECT fun_insert_ciudades(14, 5, 'Cartagena de Indias', '130001');    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(15, 5, 'Magangué', '132010');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(16, 5, 'Turbaco', '131001');               -- Instrucción de script (DML/Procedural)
+
+-- 6. Boyacá
+SELECT fun_insert_ciudades(17, 6, 'Tunja', '150001');                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(18, 6, 'Duitama', '150460');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(19, 6, 'Sogamoso', '152210');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(20, 6, 'Villa de Leyva', '154001');        -- Instrucción de script (DML/Procedural)
+
+-- 7. Caldas
+SELECT fun_insert_ciudades(21, 7, 'Manizales', '170001');             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(22, 7, 'La Dorada', '175030');             -- Instrucción de script (DML/Procedural)
+
+-- 8. Caquetá
+SELECT fun_insert_ciudades(23, 8, 'Florencia', '180001');             -- Instrucción de script (DML/Procedural)
+
+-- 9. Casanare
+SELECT fun_insert_ciudades(24, 9, 'Yopal', '850001');                 -- Instrucción de script (DML/Procedural)
+
+-- 10. Cauca
+SELECT fun_insert_ciudades(25, 10, 'Popayán', '190001');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(26, 10, 'Santander de Quilichao', '191030');    -- Instrucción de script (DML/Procedural)
+
+-- 11. Cesar
+SELECT fun_insert_ciudades(27, 11, 'Valledupar', '200001');           -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(28, 11, 'Aguachica', '205010');            -- Instrucción de script (DML/Procedural)
+
+-- 12. Chocó
+SELECT fun_insert_ciudades(29, 12, 'Quibdó', '270001');               -- Instrucción de script (DML/Procedural)
+
+-- 13. Córdoba
+SELECT fun_insert_ciudades(30, 13, 'Montería', '230001');             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(31, 13, 'Lorica', '234010');               -- Instrucción de script (DML/Procedural)
+
+-- 14. Cundinamarca
+SELECT fun_insert_ciudades(32, 14, 'Soacha', '250050');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(33, 14, 'Girardot', '252430');             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(34, 14, 'Zipaquirá', '250250');            -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(35, 14, 'Chía', '250001');                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(36, 14, 'Mosquera', '250040');             -- Instrucción de script (DML/Procedural)
+
+-- 15. Guainía
+SELECT fun_insert_ciudades(37, 15, 'Inírida', '940001');              -- Instrucción de script (DML/Procedural)
+
+-- 16. Guaviare
+SELECT fun_insert_ciudades(38, 16, 'San José del Guaviare', '950001');    -- Instrucción de script (DML/Procedural)
+
+-- 17. Huila
+SELECT fun_insert_ciudades(39, 17, 'Neiva', '410001');                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(40, 17, 'Pitalito', '417030');             -- Instrucción de script (DML/Procedural)
+
+-- 18. La Guajira
+SELECT fun_insert_ciudades(41, 18, 'Riohacha', '440001');             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(42, 18, 'Maicao', '444001');               -- Instrucción de script (DML/Procedural)
+
+-- 19. Magdalena
+SELECT fun_insert_ciudades(43, 19, 'Santa Marta', '470001');          -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(44, 19, 'Ciénaga', '479010');              -- Instrucción de script (DML/Procedural)
+
+-- 20. Meta
+SELECT fun_insert_ciudades(45, 20, 'Villavicencio', '500001');        -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(46, 20, 'Acacías', '507001');              -- Instrucción de script (DML/Procedural)
+
+-- 21. Nariño
+SELECT fun_insert_ciudades(47, 21, 'Pasto', '520001');                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(48, 21, 'Ipiales', '524060');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(49, 21, 'Tumaco', '528501');               -- Instrucción de script (DML/Procedural)
+
+-- 22. Norte de Santander
+SELECT fun_insert_ciudades(50, 22, 'Cúcuta', '540001');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(51, 22, 'Ocaña', '546550');                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(52, 22, 'Pamplona', '543050');             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(53, 22, 'Villa del Rosario', '541070');    -- Instrucción de script (DML/Procedural)
+
+-- 23. Putumayo
+SELECT fun_insert_ciudades(54, 23, 'Mocoa', '860001');                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(55, 23, 'Puerto Asís', '862020');          -- Instrucción de script (DML/Procedural)
+
+-- 24. Quindío
+SELECT fun_insert_ciudades(56, 24, 'Armenia', '630001');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(57, 24, 'Calarcá', '632001');              -- Instrucción de script (DML/Procedural)
+
+-- 25. Risaralda
+SELECT fun_insert_ciudades(58, 25, 'Pereira', '660001');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(59, 25, 'Dosquebradas', '660002');         -- Instrucción de script (DML/Procedural)
+
+-- 26. San Andrés
+SELECT fun_insert_ciudades(60, 26, 'San Andrés', '880001');           -- Instrucción de script (DML/Procedural)
+
+-- 27. Santander (Tu región)
+SELECT fun_insert_ciudades(61, 27, 'Bucaramanga', '680001');          -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(62, 27, 'Floridablanca', '681001');        -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(63, 27, 'Girón', '687541');                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(64, 27, 'Piedecuesta', '681011');          -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(65, 27, 'Barrancabermeja', '687031');      -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(66, 27, 'San Gil', '684031');              -- Instrucción de script (DML/Procedural)
+
+-- 28. Sucre
+SELECT fun_insert_ciudades(67, 28, 'Sincelejo', '700001');            -- Instrucción de script (DML/Procedural)
+
+-- 29. Tolima
+SELECT fun_insert_ciudades(68, 29, 'Ibagué', '730001');               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(69, 29, 'Espinal', '733520');              -- Instrucción de script (DML/Procedural)
+
+-- 30. Valle del Cauca
+SELECT fun_insert_ciudades(70, 30, 'Cali', '760001');                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(71, 30, 'Buenaventura', '764501');         -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(72, 30, 'Palmira', '763531');              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(73, 30, 'Tuluá', '763021');                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(74, 30, 'Buga', '763041');                 -- Instrucción de script (DML/Procedural)
+
+-- 31. Vaupés
+SELECT fun_insert_ciudades(75, 31, 'Mitú', '970001');                 -- Instrucción de script (DML/Procedural)
+
+-- 32. Vichada
+SELECT fun_insert_ciudades(76, 32, 'Puerto Carreño', '990001');       -- Instrucción de script (DML/Procedural)
+
+-- 33. Bogotá D.C.
+SELECT fun_insert_ciudades(77, 33, 'Bogotá', '110001');               -- Instrucción de script (DML/Procedural)
+
+
+-- ================================================================
+-- GRAN EXPANSIÓN DE CIUDADES DE COLOMBIA (Resto de Municipios)
+-- Secuencia inicia en ID: 78
+-- Códigos postales en NULL para agilizar la carga masiva
+-- ================================================================
+
+-- 2. ANTIOQUIA (Adicionales importantes)
+SELECT fun_insert_ciudades(78, 2, 'Caucasia', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(79, 2, 'Turbo', NULL);                     -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(80, 2, 'Santa Fe de Antioquia', NULL);     -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(81, 2, 'Guatapé', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(82, 2, 'Jardín', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(83, 2, 'Jericó', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(84, 2, 'La Ceja', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(85, 2, 'Marinilla', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(86, 2, 'Chigorodó', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(87, 2, 'Necoclí', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(88, 2, 'Yarumal', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(89, 2, 'Caldas', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(90, 2, 'Copacabana', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(91, 2, 'Girardota', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(92, 2, 'La Estrella', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(93, 2, 'Sabaneta', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(94, 2, 'Andes', NULL);                     -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(95, 2, 'Urrao', NULL);                     -- Instrucción de script (DML/Procedural)
+
+-- 4. ATLÁNTICO (Área Metropolitana y otros)
+SELECT fun_insert_ciudades(96, 4, 'Puerto Colombia', NULL);           -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(97, 4, 'Galapa', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(98, 4, 'Sabanalarga', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(99, 4, 'Baranoa', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(100, 4, 'Santo Tomás', NULL);              -- Instrucción de script (DML/Procedural)
+
+-- 5. BOLÍVAR
+SELECT fun_insert_ciudades(101, 5, 'El Carmen de Bolívar', NULL);     -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(102, 5, 'Mompox', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(103, 5, 'Arjona', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(104, 5, 'San Juan Nepomuceno', NULL);      -- Instrucción de script (DML/Procedural)
+
+-- 6. BOYACÁ
+SELECT fun_insert_ciudades(105, 6, 'Chiquinquirá', NULL);             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(106, 6, 'Paipa', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(107, 6, 'Puerto Boyacá', NULL);            -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(108, 6, 'Moniquirá', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(109, 6, 'Nobsa', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(110, 6, 'Tibasosa', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(111, 6, 'Ráquira', NULL);                  -- Instrucción de script (DML/Procedural)
+
+-- 7. CALDAS
+SELECT fun_insert_ciudades(112, 7, 'Chinchiná', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(113, 7, 'Villamaría', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(114, 7, 'Aguadas', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(115, 7, 'Riosucio', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(116, 7, 'Salamina', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(117, 7, 'Anserma', NULL);                  -- Instrucción de script (DML/Procedural)
+
+-- 8. CAQUETÁ
+SELECT fun_insert_ciudades(118, 8, 'San Vicente del Caguán', NULL);    -- Instrucción de script (DML/Procedural)
+
+-- 9. CASANARE
+SELECT fun_insert_ciudades(119, 9, 'Aguazul', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(120, 9, 'Villanueva', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(121, 9, 'Tauramena', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(122, 9, 'Paz de Ariporo', NULL);           -- Instrucción de script (DML/Procedural)
+
+-- 10. CAUCA
+SELECT fun_insert_ciudades(123, 10, 'Puerto Tejada', NULL);           -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(124, 10, 'Piendamó', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(125, 10, 'El Bordo', NULL);                -- Instrucción de script (DML/Procedural)
+
+-- 11. CESAR
+SELECT fun_insert_ciudades(126, 11, 'Bosconia', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(127, 11, 'Curumaní', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(128, 11, 'Codazzi', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(129, 11, 'La Paz', NULL);                  -- Instrucción de script (DML/Procedural)
+
+-- 12. CHOCÓ
+SELECT fun_insert_ciudades(130, 12, 'Istmina', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(131, 12, 'Tadó', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(132, 12, 'Nuquí', NULL);                   -- Turismo
+SELECT fun_insert_ciudades(133, 12, 'Bahía Solano', NULL);            -- Turismo
+
+-- 13. CÓRDOBA
+SELECT fun_insert_ciudades(134, 13, 'Cereté', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(135, 13, 'Sahagún', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(136, 13, 'Montelíbano', NULL);             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(137, 13, 'Planeta Rica', NULL);            -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(138, 13, 'Ciénaga de Oro', NULL);          -- Instrucción de script (DML/Procedural)
+
+-- 14. CUNDINAMARCA (Sabana y aledaños - Muy importante para envíos)
+SELECT fun_insert_ciudades(139, 14, 'Facatativá', NULL);              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(140, 14, 'Fusagasugá', NULL);              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(141, 14, 'Madrid', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(142, 14, 'Funza', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(143, 14, 'Cajicá', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(144, 14, 'Tocancipá', NULL);               -- Zona industrial
+SELECT fun_insert_ciudades(145, 14, 'Cota', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(146, 14, 'Sopó', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(147, 14, 'Tabio', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(148, 14, 'Tenjo', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(149, 14, 'La Calera', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(150, 14, 'Villeta', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(151, 14, 'Ubaté', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(152, 14, 'Tocaima', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(153, 14, 'Ricaurte', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(154, 14, 'Guaduas', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(155, 14, 'Pacho', NULL);                   -- Instrucción de script (DML/Procedural)
+
+-- 17. HUILA
+SELECT fun_insert_ciudades(156, 17, 'Garzón', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(157, 17, 'La Plata', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(158, 17, 'Campoalegre', NULL);             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(159, 17, 'San Agustín', NULL);             -- Turismo
+
+-- 18. LA GUAJIRA
+SELECT fun_insert_ciudades(160, 18, 'Uribia', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(161, 18, 'Fonseca', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(162, 18, 'San Juan del Cesar', NULL);      -- Instrucción de script (DML/Procedural)
+
+-- 19. MAGDALENA
+SELECT fun_insert_ciudades(163, 19, 'Fundación', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(164, 19, 'El Banco', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(165, 19, 'Plato', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(166, 19, 'Aracataca', NULL);               -- Instrucción de script (DML/Procedural)
+
+-- 20. META
+SELECT fun_insert_ciudades(167, 20, 'Granada', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(168, 20, 'Puerto López', NULL);            -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(169, 20, 'Cumaral', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(170, 20, 'Restrepo', NULL);                -- Instrucción de script (DML/Procedural)
+
+-- 21. NARIÑO
+SELECT fun_insert_ciudades(171, 21, 'La Unión', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(172, 21, 'Túquerres', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(173, 21, 'Samaniego', NULL);               -- Instrucción de script (DML/Procedural)
+
+-- 22. NORTE DE SANTANDER
+SELECT fun_insert_ciudades(174, 22, 'Los Patios', NULL);              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(175, 22, 'Tibú', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(176, 22, 'Chinácota', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(177, 22, 'El Zulia', NULL);                -- Instrucción de script (DML/Procedural)
+
+-- 23. PUTUMAYO
+SELECT fun_insert_ciudades(178, 23, 'Orito', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(179, 23, 'Sibundoy', NULL);                -- Instrucción de script (DML/Procedural)
+
+-- 24. QUINDÍO
+SELECT fun_insert_ciudades(180, 24, 'Montenegro', NULL);              -- Parque del Café
+SELECT fun_insert_ciudades(181, 24, 'Quimbaya', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(182, 24, 'La Tebaida', NULL);              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(183, 24, 'Circasia', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(184, 24, 'Salento', NULL);                 -- Turismo
+SELECT fun_insert_ciudades(185, 24, 'Filandia', NULL);                -- Turismo
+
+-- 25. RISARALDA
+SELECT fun_insert_ciudades(186, 25, 'Santa Rosa de Cabal', NULL);     -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(187, 25, 'La Virginia', NULL);             -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(188, 25, 'Belén de Umbría', NULL);         -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(189, 25, 'Marsella', NULL);                -- Instrucción de script (DML/Procedural)
+
+-- 27. SANTANDER (Gran Santander)
+SELECT fun_insert_ciudades(190, 27, 'Socorro', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(191, 27, 'Barbosa', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(192, 27, 'Vélez', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(193, 27, 'Zapatoca', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(194, 27, 'Barichara', NULL);               -- Turismo
+SELECT fun_insert_ciudades(195, 27, 'Lebrija', NULL);                 -- Aeropuerto
+SELECT fun_insert_ciudades(196, 27, 'Rionegro', NULL);                -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(197, 27, 'Sabana de Torres', NULL);        -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(198, 27, 'Cimitarra', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(199, 27, 'Málaga', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(200, 27, 'Puerto Wilches', NULL);          -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(201, 27, 'Oiba', NULL);                    -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(202, 27, 'Charalá', NULL);                 -- Instrucción de script (DML/Procedural)
+
+-- 28. SUCRE
+SELECT fun_insert_ciudades(203, 28, 'Corozal', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(204, 28, 'San Marcos', NULL);              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(205, 28, 'Tolú', NULL);                    -- Turismo
+SELECT fun_insert_ciudades(206, 28, 'Coveñas', NULL);                 -- Turismo
+SELECT fun_insert_ciudades(207, 28, 'Sampués', NULL);                 -- Instrucción de script (DML/Procedural)
+
+-- 29. TOLIMA
+SELECT fun_insert_ciudades(208, 29, 'Melgar', NULL);                  -- Turismo
+SELECT fun_insert_ciudades(209, 29, 'Honda', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(210, 29, 'Mariquita', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(211, 29, 'Chaparral', NULL);               -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(212, 29, 'Líbano', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(213, 29, 'Flandes', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(214, 29, 'Guamo', NULL);                   -- Instrucción de script (DML/Procedural)
+
+-- 30. VALLE DEL CAUCA (Muy denso comercialmente)
+SELECT fun_insert_ciudades(215, 30, 'Jamundí', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(216, 30, 'Yumbo', NULL);                   -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(217, 30, 'Cartago', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(218, 30, 'Candelaria', NULL);              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(219, 30, 'Florida', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(220, 30, 'Pradera', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(221, 30, 'El Cerrito', NULL);              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(222, 30, 'Zarzal', NULL);                  -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(223, 30, 'Roldanillo', NULL);              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(224, 30, 'Sevilla', NULL);                 -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(225, 30, 'Caicedonia', NULL);              -- Instrucción de script (DML/Procedural)
+SELECT fun_insert_ciudades(226, 30, 'Dagua', NULL);                   -- Instrucción de script (DML/Procedural)
+
+-- 3. ARAUCA (Extra)
+SELECT fun_insert_ciudades(227, 3, 'Tame', NULL);                     -- Instrucción de script (DML/Procedural)
+
+-- 1. AMAZONAS (Extra)
+SELECT fun_insert_ciudades(228, 1, 'Tarapacá', NULL);                 -- Instrucción de script (DML/Procedural)`,
+            '01_users_base.sql': `-- POBLACIÓN DE USUARIOS PERSONALIZADOS - RD WATCH V2
+-- Patrón de correo: cliente[N]@email.com
+-- Patrón de contraseña: Cliente123![N]
+
+-- 1. Administrador y Clientes Base
+-- Eliminamos el borrado masivo para preservar los seeders de 05_seeders.sql
+
+INSERT INTO tab_Usuarios (id_usuario, nom_usuario, correo_usuario, num_telefono_usuario, contra, rol, direccion_principal, activo, fec_insert, usr_insert)    -- Inserción masiva/unitaria de datos semilla en TAB_USUARIOS
+VALUES (1, 'Administrador RD Watch', 'admin@rdwatch.com', 3115460069, '\$2b\$12\$7piCEjqRgZvt0S9b.hrRC.u9IEZvceySXtJzlWtO6SweGlqQQuJu.', 'admin', 'Calle 34 #18-40 local 107', TRUE, NOW(), 'system');    -- Declaración de valores físicos a almacenar
+
+-- 2. Cliente por Defecto
+INSERT INTO tab_Usuarios (id_usuario, nom_usuario, correo_usuario, num_telefono_usuario, contra, rol, direccion_principal, activo, fec_insert, usr_insert)    -- Inserción masiva/unitaria de datos semilla en TAB_USUARIOS
+VALUES (2, 'Cliente de Prueba', 'cliente@rdwatch.com', 3001234567, '\$2y\$10\$I.llqxg0unGZ6GZ2ey1pYOLDIKDCLDy9XO9j03BDe0m2.nCPqKeYu', 'cliente', 'Carrera 10 #20-30, Bogotá', TRUE, NOW(), 'system');    -- Declaración de valores físicos a almacenar
+`,
+            '02_users_extended.sql': `INSERT INTO tab_Usuarios (id_usuario, nom_usuario, correo_usuario, num_telefono_usuario, contra, rol, direccion_principal, activo, fec_insert, usr_insert) VALUES    -- Inserción masiva/unitaria de datos semilla en TAB_USUARIOS
+
+(3, 'Cliente 3', 'cliente3@email.com', 3001234503, '\$2y\$10\$eXpfTHhAzquzf6S0ZRSI3uWn0/dQpsqIT.BXF4n324UYoQuI6MMwu', 'cliente', 'Dirección Cliente 3, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(4, 'Cliente 4', 'cliente4@rdwatch.com', 3001234504, '\$2b\$12\$t/z3kyX1eA6/80lJkivCxeKw2c5KUyNbQo4dturZdfgo9Bfe.AnVq', 'cliente', 'Dirección Cliente 4, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(5, 'Cliente 5', 'cliente5@email.com', 3001234505, '\$2y\$10\$thwoHTw.dGQaGr1zGCkCV.8cWR0oW.1tdibQWQzmfGECrkOFB7Pdi', 'cliente', 'Dirección Cliente 5, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(6, 'Cliente 6', 'cliente6@email.com', 3001234506, '\$2y\$10\$NraFqISoJnFb77wlU217su.hOkkBO1g9PszvkqDm8aeqBJr98WOIK', 'cliente', 'Dirección Cliente 6, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(7, 'Cliente 7', 'cliente7@email.com', 3001234507, '\$2y\$10\$huDaQBUL/P10ba0kS3PVzulrVTkxLbtKaGBFH99F2XEMeqBhcvPdu', 'cliente', 'Dirección Cliente 7, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(8, 'Cliente 8', 'cliente8@email.com', 3001234508, '\$2y\$10\$.AKC2D4uaUjUieTJ85UOEOKhhhfaH0Y8b2Vcs6ASdjahFyaOksZSO', 'cliente', 'Dirección Cliente 8, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(9, 'Cliente 9', 'cliente9@email.com', 3001234509, '\$2y\$10\$Kl4csRwVWtkZDpWTWerx2eKmXxOIBog.ieoLLLzMGeiSsjMXVoSvS', 'cliente', 'Dirección Cliente 9, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(10, 'Cliente 10', 'cliente10@email.com', 3001234510, '\$2y\$10\$vUFMMNCFzUfzwxtDPeD9Wuv2ehBdnCxtijpP4j8zWZgCMzmPhppWq', 'cliente', 'Dirección Cliente 10, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(11, 'Cliente 11', 'cliente11@email.com', 3001234511, '\$2y\$10\$5QQ4DMrx0WRVfw3LH94g6OnwuDRbjg2FpuQiWcbWLHuNPXZLnLq66', 'cliente', 'Dirección Cliente 11, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(12, 'Cliente 12', 'cliente12@email.com', 3001234512, '\$2y\$10\$F0JK484y1WHH5QceEPQrcujiXuPyugKZM0YNPpd.OrZVJHCK0tchS', 'cliente', 'Dirección Cliente 12, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(13, 'Cliente 13', 'cliente13@email.com', 3001234513, '\$2y\$10\$aJQOsacK6CKeqc3PvwPycujmc8YH2yIDvnqd4FN9lZhVPRyt0ljt2', 'cliente', 'Dirección Cliente 13, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(14, 'Cliente 14', 'cliente14@email.com', 3001234514, '\$2y\$10\$jGPNx6c75Dz6FD8c576ufeLWm/dLVIKaM0wmRDW0zZmMVUb3nKzAK', 'cliente', 'Dirección Cliente 14, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(15, 'Cliente 15', 'cliente15@email.com', 3001234515, '\$2y\$10\$MkbEtb44sF0xEX6OLaP6guUmf6u4YdNM9QiyytgZOFWxbwedxkjxu', 'cliente', 'Dirección Cliente 15, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(16, 'Cliente 16', 'cliente16@email.com', 3001234516, '\$2y\$10\$9O0y6Z.tnGP/NyG.6tSQ9OK0hmtX.kKAuoEWeZ/kuyM7JgnlbJjx2', 'cliente', 'Dirección Cliente 16, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(17, 'Cliente 17', 'cliente17@email.com', 3001234517, '\$2y\$10\$EuUq4e73WZhrXlolxHcmb.j39cfQ9jzBHl.AoAZid9Er1xrtnEDCS', 'cliente', 'Dirección Cliente 17, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(18, 'Cliente 18', 'cliente18@email.com', 3001234518, '\$2y\$10\$.sGPRkHsIPbe8uxLqCVc1eI9xGXoPa54A3/SOWJdTX.MFtLta75Ka', 'cliente', 'Dirección Cliente 18, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(19, 'Cliente 19', 'cliente19@email.com', 3001234519, '\$2y\$10\$odTLQKTcKzhPf2mtjlJK/OU6vL/ocSps6q668Pq4JrZ0XsDY4RZ3y', 'cliente', 'Dirección Cliente 19, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(20, 'Cliente 20', 'cliente20@email.com', 3001234520, '\$2y\$10\$7cei0TpEdwly7k6mIhwT2u.acEuctUDxxaAXFGy4dN5IC6U1NEMea', 'cliente', 'Dirección Cliente 20, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(21, 'Cliente 21', 'cliente21@email.com', 3001234521, '\$2y\$10\$fgQaIcq3AfYVWyYLLoBN1u.Ghk46A1Orf4dQUxHeESD7fWU6/TTua', 'cliente', 'Dirección Cliente 21, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(22, 'Cliente 22', 'cliente22@email.com', 3001234522, '\$2y\$10\$6UV74pcsaBOM0j2EFlhA5uci2fE74vIi1OB9cdZF43WKQF6sLY3WG', 'cliente', 'Dirección Cliente 22, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(23, 'Cliente 23', 'cliente23@email.com', 3001234523, '\$2y\$10\$vRFCvo90KOaTzdKcrx9uceI6e1.P1oacHJz29kMQqAsxBdHb34qau', 'cliente', 'Dirección Cliente 23, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(24, 'Cliente 24', 'cliente24@email.com', 3001234524, '\$2y\$10\$jQcQ6En54EK4BhRKPgfaFumaMcz3ffndo1m7Tz2puBz8NEPAQl6QO', 'cliente', 'Dirección Cliente 24, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(25, 'Cliente 25', 'cliente25@email.com', 3001234525, '\$2y\$10\$9RYf3Oh15eKkEPJ16v6iVehwxAjAcUOgbgWqlwV7yu82RBIJAZlju', 'cliente', 'Dirección Cliente 25, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(26, 'Cliente 26', 'cliente26@email.com', 3001234526, '\$2y\$10\$XiKhN1Qdv8LVKUuPFp/ZMuv61AfCORDCzg97ZmlHetQHxX6ryaT/K', 'cliente', 'Dirección Cliente 26, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(27, 'Cliente 27', 'cliente27@email.com', 3001234527, '\$2y\$10\$4cI4WQbfYL6.4nfYks8sku7Lpjx4hsdFtZWAZmWeT9eNUGvN3gXgK', 'cliente', 'Dirección Cliente 27, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(28, 'Cliente 28', 'cliente28@email.com', 3001234528, '\$2y\$10\$e4XyIvbT2bGV9uEN3JegJObLMFVjhvr9Fk.fGIS9bCUMIS7.Xyti2', 'cliente', 'Dirección Cliente 28, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(29, 'Cliente 29', 'cliente29@email.com', 3001234529, '\$2y\$10\$vPXYucKlCn7bnCaq.vaxhumqBkwCrT8ByffL7eDbjaur9d1fNSlrm', 'cliente', 'Dirección Cliente 29, Bogotá', TRUE, NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(30, 'Cliente 30', 'cliente30@email.com', 3001234530, '\$2y\$10\$DHGJR2.AyDXsI3cH5z6G3e3mEF8giML5ZfRZIvHDiDJqQILNDzQfy', 'cliente', 'Dirección Cliente 30, Bogotá', TRUE, NOW(), 'system');    -- Instrucción de script (DML/Procedural)
+`,
+            '03_catalog.sql': `-- POBLACIÓN DE CATÁLOGO MAESTRO COMPLETO - RD WATCH V2
+-- Propósito: Inventario de 55 productos y 10 servicios técnicos con integridad total.
+
+-- 1. MARCAS
+INSERT INTO tab_Marcas (id_marca, nom_marca, usr_insert, fec_insert) VALUES    -- Inserción masiva/unitaria de datos semilla en TAB_MARCAS
+(1, 'Rolex', 'system', NOW()), (2, 'Omega', 'system', NOW()), (3, 'CASSIO', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(4, 'Tissot', 'system', NOW()), (5, 'Citizen', 'system', NOW()), (6, 'Seiko', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(7, 'Bergeon', 'system', NOW()), (8, 'Tudor', 'system', NOW()), (9, 'Patek Philippe', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(10, 'Tag Heuer', 'system', NOW()), (11, 'IWC Schaffhausen', 'system', NOW()), (12, 'Bulova', 'system', NOW())    -- Instrucción de script (DML/Procedural)
+ON CONFLICT (id_marca) DO NOTHING;                                    -- Manejo seguro de colisiones: Evita inserciones duplicadas
+
+-- 2. CATEGORÍAS
+INSERT INTO tab_Categorias (id_categoria, nom_categoria, descripcion_categoria, usr_insert, fec_insert) VALUES    -- Inserción masiva/unitaria de datos semilla en TAB_CATEGORIAS
+(1, 'Relojes de Lujo', 'Cronometros de alta gama y prestigio internacional.', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(2, 'Relojes Deportivos', 'Resistencia y funcionalidad para actividades extremas.', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(3, 'Herramientas Profesionales', 'Instrumental técnico para maestros relojeros.', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(4, 'Repuestos Originales', 'Componentes genuinos para mantenimiento.', 'system', NOW())    -- Instrucción de script (DML/Procedural)
+ON CONFLICT (id_categoria) DO NOTHING;                                -- Manejo seguro de colisiones: Evita inserciones duplicadas
+
+-- 3. SUBCATEGORÍAS
+INSERT INTO tab_Subcategorias (id_categoria, id_subcategoria, nom_subcategoria, usr_insert, fec_insert) VALUES    -- Inserción masiva/unitaria de datos semilla en TAB_SUBCATEGORIAS
+(1, 1, 'Automáticos', 'system', NOW()), (1, 2, 'Cronógrafos', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(2, 1, 'Resistentes al Agua', 'system', NOW()), (2, 2, 'Smartwatches', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(3, 1, 'Instrumentos de Precisión', 'system', NOW()), (3, 2, 'Kits de Limpieza', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(4, 1, 'Correas y Brazaletes', 'system', NOW()), (4, 2, 'Cristales y Biseles', 'system', NOW())    -- Instrucción de script (DML/Procedural)
+ON CONFLICT (id_categoria, id_subcategoria) DO NOTHING;               -- Manejo seguro de colisiones: Evita inserciones duplicadas
+
+-- 4. SERVICIOS TÉCNICOS (Ultra-Detallados: Claridad total para el cliente)
+INSERT INTO tab_Servicios (id_servicio, nom_servicio, descripcion, precio_servicio, duracion_estimada, estado, usr_insert, fec_insert) VALUES    -- Inserción masiva/unitaria de datos semilla en TAB_SERVICIOS
+(1, 'Cambio de Pila Premium', 'Sustitución de celda de energía por una batería suiza de alta gama (Murata/Renata). El proceso incluye: 1. Apertura con herramienta de precisión, 2. Limpieza de sulfatación en contactos, 3. Lubricación de empaque de fondo con grasa de silicona Bergeon, 4. Verificación de consumo del circuito y 5. Sincronización horaria completa.', 45000, '30 min', TRUE, 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(2, 'Mantenimiento General Automático', 'Servicio integral de restauración mecánica (Overhaul). Incluye: 1. Desarmado pieza por pieza del calibre, 2. Lavado por ultrasonido en 4 ciclos (limpieza y enjuagues), 3. Inspección de desgaste en pivotes y rubíes, 4. Aceitado técnico con 5 tipos de lubricantes Moebius según la función de cada componente, 5. Armado, 6. Calibración de precisión en cronocomparador y 7. Prueba de reserva de marcha de 48 horas.', 320000, '3-5 días', TRUE, 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(3, 'Pulido de Caja y Pulso', 'Restauración estética de alto nivel. Utilizamos tecnología de Lapping para devolver los acabados originales: 1. Lijado controlado de rayas profundas, 2. Pulido industrial para brillo espejo, 3. Satinado fino de eslabones y 4. Lavado por ultrasonido de los componentes externos para eliminar residuos de pasta de pulir, dejando el reloj con apariencia de estreno.', 180000, '2 días', TRUE, 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(4, 'Cambio de Cristal Zafiro', 'Mejora de resistencia y visibilidad. Sustituimos su cristal mineral deteriorado por un Cristal de Zafiro sintético irrayable (Dureza 9 en escala Mohs). El proceso incluye: 1. Extracción con prensa Bergeon, 2. Limpieza de bisel interno, 3. Instalación de empaque nuevo de teflón y 4. Certificación de estanqueidad para asegurar que no ingrese humedad al reloj.', 250000, '24 horas', TRUE, 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(5, 'Restauración de Esfera', 'Proceso artesanal para diales manchados o decolorados. Comprende: 1. Desmontaje cuidadoso de manecillas e índices, 2. Limpieza química de la placa base, 3. Repintado técnico fiel al diseño original, 4. Aplicación de nueva pasta luminosa Super-LumiNova® en puntos horarios para lectura nocturna y 5. Barnizado protector contra rayos UV para evitar futuras decoloraciones.', 450000, '15 días', TRUE, 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(6, 'Prueba de Hermeticidad', 'Certificación de resistencia al agua. Sometemos el reloj a pruebas de vacío y presión hidrostática controlada mediante equipo Witschi ALC-2000. Identificamos fugas microscópicas en corona, cristal o fondo. Es vital para relojes de buceo o uso diario, entregando un reporte técnico de los bares de presión resistidos.', 85000, '1 hora', TRUE, 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(7, 'Ajuste de Brazalete', 'Adaptación perfecta a su muñeca. Ajustamos la longitud de su pulso metálico mediante: 1. Remoción técnica de eslabones sobrantes con punzones de precisión, 2. Inspección de pasadores y tornillos de seguridad, 3. Centrado del broche para mayor comodidad y 4. Limpieza profunda del brazalete en ultrasonido para retirar impurezas acumuladas entre eslabones.', 25000, '15 min', TRUE, 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(8, 'Revisión y Diagnóstico', 'Evaluación técnica sin compromiso de pago. Realizamos: 1. Análisis visual de la maquinaria, 2. Prueba electrónica de precisión (amplitud y error de beat), 3. Verificación de magnetismo y 4. Revisión de juntas de sellado. Al finalizar, le entregamos un presupuesto detallado especificando los repuestos y mano de obra necesaria para la salud de su pieza.', 0, '20 min', TRUE, 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(9, 'Cambio de Corona y Tija', 'Restauración del sistema de mando. Incluye: 1. Sustitución de la corona deteriorada por una original (roscada o a presión), 2. Cambio de la tija de remontuar (eje interno), 3. Lubricación del sistema de piñones de puesta en hora y 4. Verificación de que el cambio de fecha y hora sea suave y preciso.', 120000, '1 día', TRUE, 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(10, 'Mantenimiento Cronógrafo', 'Servicio especializado para relojes de alta complejidad. Además del mantenimiento general, realizamos: 1. Sincronización de los contadores de minutos y horas, 2. Ajuste de la fuerza de los martillos de reseteo, 3. Lubricación específica para sistemas de rueda de pilares o levas y 4. Verificación de que el inicio, parada y retorno a cero funcionen con precisión absoluta.', 650000, '8 días', TRUE, 'system', NOW())    -- Instrucción de script (DML/Procedural)
+ON CONFLICT (id_servicio) DO UPDATE SET                               -- Manejo seguro de colisiones: Evita inserciones duplicadas
+    nom_servicio = EXCLUDED.nom_servicio,                             -- Instrucción de script (DML/Procedural)
+    descripcion = EXCLUDED.descripcion,                               -- Instrucción de script (DML/Procedural)
+    precio_servicio = EXCLUDED.precio_servicio,                       -- Instrucción de script (DML/Procedural)
+    duracion_estimada = EXCLUDED.duracion_estimada,                   -- Instrucción de script (DML/Procedural)
+    estado = EXCLUDED.estado,                                         -- Instrucción de script (DML/Procedural)
+    usr_update = 'system_fix',                                        -- Instrucción de script (DML/Procedural)
+    fec_update = NOW();                                               -- Instrucción de script (DML/Procedural)
+
+-- 5. PRODUCTOS (1-55)
+INSERT INTO tab_Productos (id_producto, id_marca, nom_producto, descripcion, precio, id_categoria, id_subcategoria, stock, url_imagen, usr_insert, fec_insert) VALUES    -- Inserción masiva/unitaria de datos semilla en TAB_PRODUCTOS
+(1, 1, 'Rolex Submariner Date', 'Bisel Cerachrom negro.', 68500000, 1, 1, 5, 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(2, 1, 'Rolex Daytona Cosmograph', 'Oro de 18 quilates.', 145000000, 1, 2, 2, 'https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(3, 2, 'Omega Speedmaster Moonwatch', 'Calibre 3861 manual.', 34200000, 1, 2, 8, 'https://images.unsplash.com/photo-1612817159949-195b6eb9e31a?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(4, 2, 'Omega Seamaster Diver 300M', 'Cerámica azul.', 28900000, 1, 1, 10, 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(5, 4, 'Tissot Le Locle Powermatic', '80 horas reserva.', 3450000, 1, 1, 15, 'https://images.unsplash.com/photo-1619134177114-f5da772156be?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(6, 3, 'CASSIO G-Shock Mudmaster', 'Resistencia extrema.', 1850000, 2, 1, 20, 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(7, 3, 'CASSIO Retro Gold', 'Icono de los 80.', 320000, 2, 1, 50, 'https://images.unsplash.com/photo-1622434641406-a158123450f9?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(8, 6, 'Seiko 5 Sports Orange', 'Automático dinámico.', 1650000, 2, 1, 12, 'https://images.unsplash.com/photo-1612502169027-5a3d92c7fac7?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(9, 6, 'Seiko Prospex Turtle', 'Buceo profesional.', 2450000, 2, 1, 9, 'https://images.unsplash.com/photo-1614242233320-7f28ed98801d?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(10, 5, 'Citizen Eco-Drive Promaster', 'Carga solar.', 1980000, 2, 1, 14, 'https://images.unsplash.com/photo-1623932230865-ec1ba0884d59?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(11, 7, 'Set Bergeon 30081', '10 piezas precisión.', 1150000, 3, 1, 5, 'https://images.unsplash.com/photo-1530124560676-4ce69299d261?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(12, 7, 'Prensa Bergeon', 'Fondos a presión.', 2300000, 3, 1, 3, 'https://images.unsplash.com/photo-1581092921461-7d2a9390779d?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(13, 7, 'Ultrasonido Limpieza', 'Para pulsos y cajas.', 450000, 3, 2, 10, 'https://images.unsplash.com/photo-1533038590840-1cde6e668a91?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(14, 7, 'Extractor Pasadores', 'Sin rayones.', 180000, 3, 1, 25, 'https://images.unsplash.com/photo-1579446565308-427218a244fe?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(15, 7, 'Lupa Relojero 10x', 'Detalle calibres.', 85000, 3, 1, 40, 'https://images.unsplash.com/photo-1618035222100-81f3ad437341?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(16, 1, 'Brazalete Oyster Acero', 'Repuesto Rolex.', 12500000, 4, 1, 2, 'https://images.unsplash.com/photo-1549448530-50d4f1073177?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(17, 2, 'Correa Caucho Azul', 'Repuesto Omega.', 1850000, 4, 1, 6, 'https://images.unsplash.com/photo-1612817159676-e1e550c609e2?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(18, 1, 'Zafiro Rolex GMT', 'Lupa Cyclops.', 3450000, 4, 2, 4, 'https://images.unsplash.com/photo-1618035222044-67ad68b8e053?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(19, 6, 'Maquinaria NH35A', 'Movimiento Seiko.', 320000, 4, 2, 30, 'https://images.unsplash.com/photo-1618035222100-2dca84310e52?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(20, 3, 'Correa Resina Negra', 'Repuesto G-Shock.', 120000, 4, 1, 100, 'https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(21, 5, 'Citizen Skyhawk', 'Radio controlado.', 3250000, 2, 1, 7, 'https://images.unsplash.com/photo-1612502169027-4c407f240902?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(22, 4, 'Tissot PRX Blue', 'Icono de los 70.', 3850000, 1, 1, 12, 'https://images.unsplash.com/photo-1619134177114-f5da772156be?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(23, 2, 'Omega Constellation', 'Reloj vintage.', 8500000, 1, 1, 1, 'https://images.unsplash.com/photo-1612817159949-195b6eb9e31a?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(24, 6, 'Seiko Presage Cocktail', 'Textura esfera.', 2150000, 1, 1, 8, 'https://images.unsplash.com/photo-1612502169027-5a3d92c7fac7?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(25, 3, 'CASSIO Edifice', 'Bluetooth intel.', 850000, 2, 1, 20, 'https://images.unsplash.com/photo-1614242233320-7f28ed98801d?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(26, 9, 'Patek Nautilus 5711', 'Esfera azul degrade.', 480000000, 1, 1, 1, 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(27, 8, 'Tudor Black Bay 58', 'Bisel azul años 50.', 18500000, 1, 1, 6, 'https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(28, 10, 'Tag Heuer Monaco', 'Edición Gulf.', 32400000, 1, 2, 4, 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(29, 11, 'IWC Portugieser', 'Agujas acero azul.', 39800000, 1, 2, 3, 'https://images.unsplash.com/photo-1612817159949-195b6eb9e31a?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(30, 2, 'Omega Aqua Terra', 'Dial Teak.', 24600000, 1, 1, 5, 'https://images.unsplash.com/photo-1619134177114-f5da772156be?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(31, 3, 'CASSIO Pro Trek', 'Altímetro solar.', 1250000, 2, 1, 15, 'https://images.unsplash.com/photo-1614242233320-7f28ed98801d?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(32, 12, 'Bulova Lunar Pilot', 'Misión Apollo 15.', 3200000, 2, 1, 10, 'https://images.unsplash.com/photo-1622434641406-a158123450f9?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(33, 6, 'Seiko Alpinist', 'Brújula interna.', 3450000, 2, 1, 8, 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(34, 4, 'Tissot Gentleman', 'Titanio ligero.', 4200000, 1, 1, 12, 'https://images.unsplash.com/photo-1612502169027-5a3d92c7fac7?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(35, 1, 'Rolex Explorer II', 'Cajas polares.', 54000000, 2, 1, 2, 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(36, 7, 'Aceitador Precisión', 'Bergeon gota-gota.', 85000, 3, 1, 20, 'https://images.unsplash.com/photo-1581092921461-7d2a9390779d?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(37, 7, 'Kit Pulido Lux', 'Metales preciosos.', 120000, 3, 2, 40, 'https://images.unsplash.com/photo-1533038590840-1cde6e668a91?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(38, 7, 'Pinzas Antimagnét.', 'Bergeon precisión.', 65000, 3, 1, 60, 'https://images.unsplash.com/photo-1579446565308-427218a244fe?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(39, 1, 'Bisel Rolex Green', 'Bisel Hulk.', 8500000, 4, 2, 3, 'https://images.unsplash.com/photo-1618035222044-67ad68b8e053?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(40, 2, 'Cierre Omega Acero', 'Seguridad cuero.', 2300000, 4, 1, 10, 'https://images.unsplash.com/photo-1618035222100-2dca84310e52?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(41, 1, 'Rolex Datejust 41', 'Mint Green dial.', 52000000, 1, 1, 4, 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(42, 6, 'Seiko SKX007', 'Legendario buceo.', 1450000, 2, 1, 0, 'https://images.unsplash.com/photo-1614242233320-7f28ed98801d?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(43, 3, 'CASSIO F-91W', 'Clásico absoluto.', 85000, 2, 1, 200, 'https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(44, 4, 'Tissot Visodate', 'Estilo retro.', 2800000, 1, 1, 9, 'https://images.unsplash.com/photo-1619134177114-f5da772156be?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(45, 10, 'Tag Heuer Carrera', 'Calibre 5 auto.', 12500000, 1, 1, 7, 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(46, 11, 'IWC Big Pilot', 'Aviation icon.', 58000000, 2, 1, 2, 'https://images.unsplash.com/photo-1612817159949-195b6eb9e31a?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(47, 5, 'Citizen Tsuyosa', 'Tiffany dial.', 1650000, 1, 1, 15, 'https://images.unsplash.com/photo-1612502169027-5a3d92c7fac7?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(48, 12, 'Bulova Precisionist', 'Cuarzo fluido.', 2450000, 2, 1, 11, 'https://images.unsplash.com/photo-1622434641406-a158123450f9?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(49, 9, 'Patek Aquanaut', 'Lujo tropical.', 320000000, 2, 1, 1, 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(50, 8, 'Tudor Pelagos', 'Titanio grado 2.', 22500000, 2, 1, 5, 'https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(51, 1, 'Rolex Milgauss', 'Z-Blue dial.', 48900000, 1, 1, 3, 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(52, 2, 'Omega Bond NTTD', 'Edición titania.', 42000000, 2, 1, 4, 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(53, 3, 'CASSIO Silver', 'Icono acero.', 230000, 2, 1, 100, 'https://images.unsplash.com/photo-1614242233320-7f28ed98801d?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(54, 4, 'Tissot Seastar', 'Bicel cerámico.', 3150000, 2, 1, 14, 'https://images.unsplash.com/photo-1612502169027-5a3d92c7fac7?w=800', 'system', NOW()),    -- Instrucción de script (DML/Procedural)
+(55, 6, 'Seiko DressKX', 'Versatilidad pura.', 1200000, 1, 1, 20, 'https://images.unsplash.com/photo-1614242233320-7f28ed98801d?w=800', 'system', NOW())    -- Instrucción de script (DML/Procedural)
+ON CONFLICT (id_producto) DO NOTHING;                                 -- Manejo seguro de colisiones: Evita inserciones duplicadas
+`,
+            '04_activity.sql': `-- POBLACIÓN DE ACTIVIDAD MASIVA - RD WATCH V2
+-- Propósito: Generar 70+ pedidos y 35+ citas (100+ interacciones) para simulación real.
+
+-- 1. LIMPIAR DATOS PREVIOS DE ACTIVIDAD
+DELETE FROM tab_Pagos;                                                -- Limpieza de datos (Purga) previa a la inserción masiva
+DELETE FROM tab_Envios;                                               -- Limpieza de datos (Purga) previa a la inserción masiva
+DELETE FROM tab_Detalle_Factura;                                      -- Limpieza de datos (Purga) previa a la inserción masiva
+DELETE FROM tab_Facturas;                                             -- Limpieza de datos (Purga) previa a la inserción masiva
+DELETE FROM tab_Detalle_Orden;                                        -- Limpieza de datos (Purga) previa a la inserción masiva
+DELETE FROM tab_Orden;                                                -- Limpieza de datos (Purga) previa a la inserción masiva
+DELETE FROM tab_Reservas;                                             -- Limpieza de datos (Purga) previa a la inserción masiva
+
+-- 2. GENERACIÓN DE ÓRDENES (Lógica manual para asegurar IDs y consistencia)
+-- Generaremos bloques de órdenes para distintos usuarios.
+-- Usuario 2 (Juan Perez) - Cliente frecuente
+INSERT INTO tab_Orden (id_orden, id_usuario, fecha_orden, estado_orden, total_orden, concepto, fec_insert, usr_insert) VALUES    -- Inserción masiva/unitaria de datos semilla en TAB_ORDEN
+(2001, 2, NOW() - INTERVAL '10 days', 'enviado', 68500000, 'Envío a domicilio - Rolex Submariner', NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(2002, 2, NOW() - INTERVAL '5 days', 'confirmado', 320000, 'Pedido Casio Retro', NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(2003, 2, NOW() - INTERVAL '1 day', 'pendiente', 450000, 'Kit de limpieza y accesorios', NOW(), 'system');    -- Instrucción de script (DML/Procedural)
+
+-- Usuario 3 (Maria)
+INSERT INTO tab_Orden (id_orden, id_usuario, fecha_orden, estado_orden, total_orden, concepto, fec_insert, usr_insert) VALUES    -- Inserción masiva/unitaria de datos semilla en TAB_ORDEN
+(2004, 3, NOW() - INTERVAL '15 days', 'enviado', 28900000, 'Compra Omega Seamaster', NOW(), 'system'),    -- Instrucción de script (DML/Procedural)
+(2005, 3, NOW() - INTERVAL '2 days', 'cancelado', 1850000, 'Error en pedido G-Shock', NOW(), 'system');    -- Instrucción de script (DML/Procedural)
+
+-- Bucle de 65 pedidos adicionales (IDs 2006 a 2070) distribuidos en los 30 usuarios
+-- Usando una técnica de INSERT masivo con IDs precalculados para evitar scripts complejos
+DO \$\$                                                                 -- Apertura de bloque anónimo PL/pgSQL para ejecución procedural
+DECLARE                                                               -- Declaración de variables de iteración/estado temporal
+    i INT;                                                            -- Instrucción de script (DML/Procedural)
+    u_id INT;                                                         -- Instrucción de script (DML/Procedural)
+    est VARCHAR;                                                      -- Instrucción de script (DML/Procedural)
+    total DECIMAL;                                                    -- Instrucción de script (DML/Procedural)
+BEGIN                                                                 -- Inicio de bloque transaccional procedural
+    FOR i IN 2006..2070 LOOP                                          -- Instrucción de script (DML/Procedural)
+        u_id := (i % 29) + 2;                                         -- Rota entre usuarios 2 y 30
+        est := CASE (i % 4)                                           -- Instrucción de script (DML/Procedural)
+                WHEN 0 THEN 'enviado'                                 -- Instrucción de script (DML/Procedural)
+                WHEN 1 THEN 'confirmado'                              -- Instrucción de script (DML/Procedural)
+                WHEN 2 THEN 'pendiente'                               -- Instrucción de script (DML/Procedural)
+                ELSE 'cancelado'                                      -- Instrucción de script (DML/Procedural)
+               END;                                                   -- Instrucción de script (DML/Procedural)
+        total := (i * 1500) + (u_id * 500);                           -- Valores variados
+
+        INSERT INTO tab_Orden (id_orden, id_usuario, fecha_orden, estado_orden, total_orden, concepto, fec_insert, usr_insert)    -- Inserción masiva/unitaria de datos semilla en TAB_ORDEN
+        VALUES (i, u_id, NOW() - (i % 30 || ' days')::INTERVAL, est, total, 'Pedido automático de prueba #' || i, NOW(), 'system');    -- Declaración de valores físicos a almacenar
+
+        -- Detalle de Orden básico para que no esté vacío
+        INSERT INTO tab_Detalle_Orden (id_detalle_orden, id_orden, id_producto, cantidad, precio_unitario, fec_insert, usr_insert)    -- Inserción masiva/unitaria de datos semilla en TAB_DETALLE_ORDEN
+        VALUES (i*10, i, (i % 50) + 1, 1, total, NOW(), 'system');    -- Declaración de valores físicos a almacenar
+
+        -- Factura básica
+        INSERT INTO tab_Facturas (id_factura, id_orden, id_usuario, fecha_emision, total_factura, estado_factura, fec_insert, usr_insert)    -- Inserción masiva/unitaria de datos semilla en TAB_FACTURAS
+        VALUES (i+5000, i, u_id, NOW() - (i % 30 || ' days')::INTERVAL, total, 'Emitida', NOW(), 'system');    -- Declaración de valores físicos a almacenar
+
+        -- Pago (solo para enviados y confirmados)
+        IF est IN ('enviado', 'confirmado') THEN                      -- Instrucción de script (DML/Procedural)
+            INSERT INTO tab_Pagos (id_pago, id_orden, monto, id_metodo_pago, estado_pago, fecha_pago, fec_insert, usr_insert)    -- Inserción masiva/unitaria de datos semilla en TAB_PAGOS
+            VALUES (i+10000, i, total, 1, 'completado', NOW(), NOW(), 'system');    -- Declaración de valores físicos a almacenar
+        END IF;                                                       -- Instrucción de script (DML/Procedural)
+
+    END LOOP;                                                         -- Instrucción de script (DML/Procedural)
+END \$\$;                                                               -- Fin y ejecución del bloque anónimo estructural
+
+-- 3. GENERACIÓN DE CITAS (35+ registros)
+-- IDs 5001 a 5040
+DO \$\$                                                                 -- Apertura de bloque anónimo PL/pgSQL para ejecución procedural
+DECLARE                                                               -- Declaración de variables de iteración/estado temporal
+    i INT;                                                            -- Instrucción de script (DML/Procedural)
+    u_id INT;                                                         -- Instrucción de script (DML/Procedural)
+    s_id INT;                                                         -- Instrucción de script (DML/Procedural)
+    est VARCHAR;                                                      -- Instrucción de script (DML/Procedural)
+    prio VARCHAR;                                                     -- Instrucción de script (DML/Procedural)
+BEGIN                                                                 -- Inicio de bloque transaccional procedural
+    FOR i IN 5001..5040 LOOP                                          -- Instrucción de script (DML/Procedural)
+        u_id := (i % 29) + 2;                                         -- Instrucción de script (DML/Procedural)
+        s_id := (i % 10) + 1;                                         -- Instrucción de script (DML/Procedural)
+        est := CASE (i % 4)                                           -- Instrucción de script (DML/Procedural)
+                WHEN 0 THEN 'completada'                              -- Instrucción de script (DML/Procedural)
+                WHEN 1 THEN 'confirmada'                              -- Instrucción de script (DML/Procedural)
+                WHEN 2 THEN 'pendiente'                               -- Instrucción de script (DML/Procedural)
+                ELSE 'cancelada'                                      -- Instrucción de script (DML/Procedural)
+               END;                                                   -- Instrucción de script (DML/Procedural)
+        prio := CASE (i % 3) WHEN 0 THEN 'alta' ELSE 'normal' END;    -- Instrucción de script (DML/Procedural)
+
+        INSERT INTO tab_Reservas (id_reserva, id_usuario, id_servicio, fecha_reserva, fecha_preferida, prioridad, estado_reserva, notas_cliente, fec_insert, usr_insert)    -- Inserción masiva/unitaria de datos semilla en TAB_RESERVAS
+        VALUES (i, u_id, s_id, NOW() - (i % 20 || ' days')::INTERVAL, (CURRENT_DATE + (i % 15)), prio, est, 'Simulación de falla en reloj #' || i, NOW(), 'system');    -- Declaración de valores físicos a almacenar
+    END LOOP;                                                         -- Instrucción de script (DML/Procedural)
+END \$\$;                                                               -- Fin y ejecución del bloque anónimo estructural
+`,
+            '04a_create_reviews_table.sql': `-- =====================================================
+-- Tabla: tab_Opiniones
+-- Almacena las reseñas y calificaciones de los usuarios.
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS tab_Opiniones                              -- Instrucción de script (DML/Procedural)
+(                                                                     -- Inicio de tupla de datos
+    id_opinion      SERIAL PRIMARY KEY,                               -- Identificador único de la reseña
+    id_usuario      BIGINT NOT NULL,                                  -- Usuario que realiza la reseña
+    calificacion    SMALLINT NOT NULL CHECK (calificacion >= 1 AND calificacion <= 5),    -- Puntuación (1-5)
+    comentario      TEXT NOT NULL,                                    -- Texto de la reseña
+    fecha_opinion   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,              -- Fecha de publicación
+    activo          BOOLEAN DEFAULT TRUE,                             -- Estado de la reseña
+
+    -- Auditoría
+    usr_insert      VARCHAR(100),                                     -- Instrucción de script (DML/Procedural)
+    fec_insert      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,              -- Instrucción de script (DML/Procedural)
+    usr_update      VARCHAR(100),                                     -- Instrucción de script (DML/Procedural)
+    fec_update      TIMESTAMP,                                        -- Instrucción de script (DML/Procedural)
+
+    -- Llave foránea
+    CONSTRAINT fk_opinion_usuario FOREIGN KEY (id_usuario) REFERENCES tab_Usuarios (id_usuario) ON DELETE CASCADE    -- Instrucción de script (DML/Procedural)
+);                                                                    -- Fin de tupla de datos
+
+-- Índices para mejorar el rendimiento
+CREATE INDEX IF NOT EXISTS idx_opiniones_usuario ON tab_Opiniones (id_usuario);    -- Instrucción de script (DML/Procedural)
+CREATE INDEX IF NOT EXISTS idx_opiniones_fecha   ON tab_Opiniones (fecha_opinion DESC);    -- Instrucción de script (DML/Procedural)
+CREATE INDEX IF NOT EXISTS idx_opiniones_activo  ON tab_Opiniones (activo);    -- Instrucción de script (DML/Procedural)
+`,
+            '05_reviews.sql': `-- =====================================================
+-- Datos de prueba para tab_Opiniones
+-- =====================================================
+
+-- Insertamos algunas reseñas de prueba vinculadas a usuarios existentes
+-- Nota: Asumimos que existen usuarios con ID 101, 102, 103 (ajustar si es necesario)
+-- O mejor, usamos una subconsulta para obtener IDs reales si están disponibles
+
+INSERT INTO tab_Opiniones (id_usuario, calificacion, comentario, usr_insert)    -- Inserción masiva/unitaria de datos semilla en TAB_OPINIONES
+SELECT id_usuario, 5, '¡Excelente servicio! Mi reloj quedó como nuevo. Muy recomendados.', 'sistema'    -- Instrucción de script (DML/Procedural)
+FROM tab_Usuarios                                                     -- Instrucción de script (DML/Procedural)
+LIMIT 1;                                                              -- Instrucción de script (DML/Procedural)
+
+INSERT INTO tab_Opiniones (id_usuario, calificacion, comentario, usr_insert)    -- Inserción masiva/unitaria de datos semilla en TAB_OPINIONES
+SELECT id_usuario, 4, 'Muy buena atención, aunque tardaron un poco más de lo esperado en la reparación.', 'sistema'    -- Instrucción de script (DML/Procedural)
+FROM tab_Usuarios                                                     -- Instrucción de script (DML/Procedural)
+OFFSET 1 LIMIT 1;                                                     -- Instrucción de script (DML/Procedural)
+
+INSERT INTO tab_Opiniones (id_usuario, calificacion, comentario, usr_insert)    -- Inserción masiva/unitaria de datos semilla en TAB_OPINIONES
+SELECT id_usuario, 5, 'La mejor relojería de Bucaramanga. Tres generaciones de confianza.', 'sistema'    -- Instrucción de script (DML/Procedural)
+FROM tab_Usuarios                                                     -- Instrucción de script (DML/Procedural)
+OFFSET 2 LIMIT 1;                                                     -- Instrucción de script (DML/Procedural)
+`,
+            '06_configuracion_admin_pending.sql': `SELECT fun_registrar_usuario(                                         -- Instrucción de script (DML/Procedural)
+    'Admin',                                                          -- Instrucción de script (DML/Procedural)
+    'admin@rdwatch.com',                                              -- Instrucción de script (DML/Procedural)
+    3115460069,                                                       -- Instrucción de script (DML/Procedural)
+    'Admin123.',                                                      -- Instrucción de script (DML/Procedural)
+    'Calle 34 #18-40 local 107'                                       -- Instrucción de script (DML/Procedural)
+);                                                                    -- Fin de tupla de datos
+
+-- 2. Cambiar rol a admin
+UPDATE tab_Usuarios                                                   -- Instrucción de script (DML/Procedural)
+SET rol = 'admin'                                                     -- Instrucción de script (DML/Procedural)
+WHERE correo_usuario = 'admin@rdwatch.com';                           -- Instrucción de script (DML/Procedural)
+
+-- 3. Verificar
+SELECT id_usuario, nom_usuario, correo_usuario, rol                   -- Instrucción de script (DML/Procedural)
+FROM tab_Usuarios                                                     -- Instrucción de script (DML/Procedural)
+WHERE correo_usuario = 'admin@rdwatch.com';                           -- Instrucción de script (DML/Procedural)
+
+SELECT * FROM tab_Usuarios;                                           -- Consulta de selección / lectura de validación`
+        };
+
+        const modules = {
+            'm_geografia': {
+                'id': 'datos_base_y_geografía.sql',
+                'title': 'Datos Base y Geografía',
+                'fase': 'Seed',
+                'desc_short': 'Departamentos y ciudades de Colombia.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'scripts': 1},
+                'functions': [
+                    {'id': '00_geodata.sql', 'name': '00_geodata.sql', 'type': 'SCRIPT', 'desc': 'Inserta departamentos y ciudades.', 'php': 'N/A'},
+                ]
+            },
+            'm_usuarios': {
+                'id': 'usuarios_y_roles.sql',
+                'title': 'Usuarios y Roles',
+                'fase': 'Seed',
+                'desc_short': 'Administradores y clientes de prueba.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'scripts': 3},
+                'functions': [
+                    {'id': '01_users_base.sql', 'name': '01_users_base.sql', 'type': 'SCRIPT', 'desc': 'Crea cuentas base (admin y clientes).', 'php': 'N/A'},
+                    {'id': '02_users_extended.sql', 'name': '02_users_extended.sql', 'type': 'SCRIPT', 'desc': 'Agrega direcciones a usuarios.', 'php': 'N/A'},
+                    {'id': '06_configuracion_admin_pending.sql', 'name': '06_configuracion_admin_pending.sql', 'type': 'SCRIPT', 'desc': 'Verifica y asigna roles a admin.', 'php': 'N/A'},
+                ]
+            },
+            'm_catalogo': {
+                'id': 'catálogo_de_prueba.sql',
+                'title': 'Catálogo de Prueba',
+                'fase': 'Seed',
+                'desc_short': 'Marcas, categorías y productos iniciales.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'scripts': 1},
+                'functions': [
+                    {'id': '03_catalog.sql', 'name': '03_catalog.sql', 'type': 'SCRIPT', 'desc': 'Puebla todo el catálogo de productos.', 'php': 'N/A'},
+                ]
+            },
+            'm_comercio': {
+                'id': 'actividad_comercial.sql',
+                'title': 'Actividad Comercial',
+                'fase': 'Seed',
+                'desc_short': 'Órdenes, compras y facturación simulada.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'scripts': 1},
+                'functions': [
+                    {'id': '04_activity.sql', 'name': '04_activity.sql', 'type': 'SCRIPT', 'desc': 'Genera 70+ órdenes simuladas.', 'php': 'N/A'},
+                ]
+            },
+            'm_opiniones': {
+                'id': 'opiniones_y_reseñas.sql',
+                'title': 'Opiniones y Reseñas',
+                'fase': 'Seed',
+                'desc_short': 'Estructura y datos de comentarios.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'scripts': 2},
+                'functions': [
+                    {'id': '04a_create_reviews_table.sql', 'name': '04a_create_reviews_table.sql', 'type': 'SCRIPT', 'desc': 'Crea tabla de resenas.', 'php': 'N/A'},
+                    {'id': '05_reviews.sql', 'name': '05_reviews.sql', 'type': 'SCRIPT', 'desc': 'Agrega reviews de prueba.', 'php': 'N/A'},
+                ]
+            },
+        };
+
+        function init() {
+            const list = document.getElementById('module-list');
+            Object.entries(modules).forEach(([id, data]) => {
+                const card = document.createElement('div');
+                card.className = 'module-card';
+                card.id = `card-${id}`;
+                card.innerHTML = `
+                    <div class="module-title">${data.id}</div>
+                    <div class="module-subtitle" style="margin-bottom: 6px;">${data.title} &middot; ${data.fase}</div>
+                    <div style="font-size: 0.65rem; color: var(--text-dim); line-height: 1.4;">${data.desc_short}</div>
+                `;
+                card.onclick = () => selectModule(id);
+                list.appendChild(card);
+            });
+
+            document.getElementById('global-search').addEventListener('input', handleSearch);
+        }
+
+        function selectModule(id) {
+            const data = modules[id];
+            const detailArea = document.getElementById('detail-area');
+
+            document.querySelectorAll('.module-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`card-${id}`).classList.add('active');
+
+            detailArea.innerHTML = `
+                <div class="fade-in">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+                        <div>
+                            <h2 style="font-size: 1.5rem; margin-bottom: 0.3rem;">${data.id}</h2>
+                            <p style="color: var(--text-dim); font-size: 0.9rem;">${data.title} — Lógica de Negocio Encápsulada</p>
+                        </div>
+                        <div class="tag tag-atomic" style="padding: 0.5rem 1rem;">${data.fase}</div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-value">${data.stats.functions}</div><div class="stat-label">Funciones</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.stats.lines}</div><div class="stat-label">Líneas SQL</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.stats.tables}</div><div class="stat-label">Tablas Rel.</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.stats.php}</div><div class="stat-label">Archivos PHP</div></div>
+                    </div>
+
+                    <h3 style="margin: 2rem 0 1rem; font-size: 1rem; border-left: 3px solid var(--accent-color); padding-left: 10px;">Funciones Disponibles para Inspección</h3>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Función (Clic para ver código)</th>
+                                    <th>Tipo</th>
+                                    <th>Resumen</th>
+                                    <th>Endpoint PHP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.functions.map(f => `
+                                    <tr onclick="loadCode('${f.id}', '${data.id}')">
+                                        <td><code-inline>${f.name}</code-inline></td>
+                                        <td><span class="tag tag-${f.type.toLowerCase().split('/')[0].replace('+', '')}">${f.type}</span></td>
+                                        <td style="font-size: 0.75rem;">${f.desc}</td>
+                                        <td><span class="php-badge">${f.php}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        function highlightSQL(code) {
+            if (!code) return '';
+
+            // Escape HTML first
+            code = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Strings
+            code = code.replace(/('(?:[^'\\]|\\.)*')/g, '<span class="string">$1</span>');
+
+            // Comments
+            code = code.replace(/(--.*?)$/gm, '<span class="comment">$1</span>');
+            code = code.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="comment">$1</span>');
+
+            // Keywords
+            const keywords = ['CREATE', 'OR', 'REPLACE', 'FUNCTION', 'RETURNS', 'TABLE', 'AS', 'DECLARE', 'BEGIN', 'END', 'IF', 'THEN', 'ELSE', 'ELSIF', 'WHILE', 'LOOP', 'FOR', 'IN', 'RETURN', 'QUERY', 'SELECT', 'FROM', 'WHERE', 'AND', 'JOIN', 'LEFT', 'ON', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'COALESCE', 'COUNT', 'SUM', 'IS', 'NULL', 'TRUE', 'FALSE', 'LIMIT', 'EXISTS', 'NOT', 'DEFAULT', 'EXCEPTION', 'WHEN', 'OTHERS', 'ROW_TO_JSON', 'JSON_BUILD_OBJECT', 'JSON_AGG', 'EXTRACT', 'EPOCH', 'NOW', 'ROUND'];
+            const typeWords = ['TEXT', 'BIGINT', 'INTEGER', 'NUMERIC', 'JSON', 'VARCHAR', 'BOOLEAN', 'TIMESTAMP', 'BYTEA', 'RECORD', 'VOID', 'DATE', 'TIME', 'INTERVAL'];
+
+            const kwRegex = new RegExp('\\b(' + keywords.join('|') + ')\\b', 'gi');
+            code = code.replace(kwRegex, '<span class="keyword">$1</span>');
+
+            const tyRegex = new RegExp('\\b(' + typeWords.join('|') + ')\\b', 'gi');
+            code = code.replace(tyRegex, '<span class="type">$1</span>');
+
+            // Function calls
+            code = code.replace(/ ([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g, ' <span class="function">$1</span>');
+
+            return code;
+        }
+
+        function loadCode(fnId, moduleId) {
+            const display = document.getElementById('code-display');
+            const filenameTarget = document.getElementById('code-filename');
+            const statsTarget = document.getElementById('code-stats');
+
+            filenameTarget.innerText = `${moduleId} > ${fnId}()`;
+            statsTarget.innerText = 'Contenido del Script SQL';
+
+            if (functionCode[fnId]) {
+                display.innerHTML = highlightSQL(functionCode[fnId]);
+                document.getElementById('code-area').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                display.innerHTML = `<span class="comment">-- El código para ${fnId} está disponible en el archivo físico ${moduleId}.
+-- Esta versión del dashboard incluye las funciones clave; 
+-- para más detalles consulte el código fuente adjunto.</span>`;
+            }
+
+            display.classList.remove('fade-in');
+            void display.offsetWidth; // Trigger reflow
+            display.classList.add('fade-in');
+        }
+
+        function handleSearch(e) {
+            const term = e.target.value.toLowerCase();
+            if (term === "") return;
+
+            const results = [];
+            Object.entries(modules).forEach(([modId, modData]) => {
+                modData.functions.forEach(f => {
+                    if (f.name.toLowerCase().includes(term) || f.desc.toLowerCase().includes(term) || f.php.toLowerCase().includes(term)) {
+                        results.push({ ...f, mod: modData.id });
+                    }
+                });
+            });
+
+            renderSearchResults(results, term);
+        }
+
+        function renderSearchResults(results, term) {
+            const detailArea = document.getElementById('detail-area');
+            if (results.length === 0) {
+                detailArea.innerHTML = `<div class="empty-state">No se encontraron funciones para "${term}"</div>`;
+                return;
+            }
+
+            detailArea.innerHTML = `
+                <div class="fade-in">
+                    <h2 style="margin-bottom: 1.5rem; font-size: 1.3rem;">Resultados para: "${term}"</h2>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Módulo</th>
+                                    <th>Función</th>
+                                    <th>Tipo</th>
+                                    <th>Propósito</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${results.map(r => `
+                                    <tr onclick="loadCode('${r.id}', '${r.mod}')">
+                                        <td style="font-size: 0.7rem; opacity: 0.6;">${r.mod}</td>
+                                        <td><code-inline>${r.name}</code-inline></td>
+                                        <td><span class="tag tag-${r.type.toLowerCase().split('/')[0].replace('+', '')}">${r.type}</span></td>
+                                        <td style="font-size: 0.75rem;">${r.desc}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+
+</html>

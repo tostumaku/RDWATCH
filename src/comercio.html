@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comercio - Relojería Durán</title>
+    <meta name="description"
+        content="Catálogo de relojes de lujo, repuestos y accesorios originales de Relojería Durán.">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+        integrity="sha384-5e2ESR8Ycmos6g3gAKr1Jvwye8sW4U1u/cAKulfVJnkakCcMqhOudbtPnvJ+nbv7" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div id="notification" class="notification"></div>
+
+    <header class="header scrolled">
+        <div class="container header-container">
+            <div class="header-logo">
+                <a href="../index.html"><i class="fas fa-clock logo-icon"></i> <span>Relojería</span> Durán</a>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="../index.html#services-section" class="nav-link">Servicios</a></li>
+                    <li><a href="../index.html#about-us-section" class="nav-link">Sobre Nosotros</a></li>
+                    <li><a href="../index.html#reviews-section" class="nav-link">Reseñas</a></li>
+                    <li><a href="../index.html#gallery-section" class="nav-link">Galería</a></li>
+                    <li><a href="comercio.html" class="nav-link active">Comercio</a></li>
+                </ul>
+            </nav>
+            <div class="header-actions">
+                <button id="login-btn" class="button button-secondary"><i class="fas fa-user"></i> Mi Cuenta</button>
+                <a href="../index.html#contact-section" class="button button-primary"><i class="fas fa-phone-alt"></i>
+                    Contacto</a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Menú móvil">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <section class="page-hero-banner"
+        style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('../img/hero-bg.jpg') no-repeat center center/cover;">
+        <div class="container">
+            <h1 class="hero-title" style="color: var(--primary-light); text-align: center;">Nuestra Colección</h1>
+            <p class="hero-subtitle" style="text-align: center; color: var(--white);">Relojes de lujo, herramientas y
+                repuestos originales.</p>
+        </div>
+    </section>
+
+    <section class="shop-section">
+        <div class="container shop-layout">
+
+            <aside class="sidebar">
+                <div class="sidebar-header"
+                    style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <h2
+                        style="font-size: 1.5rem; color: var(--primary-color); display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-filter"></i> Filtros
+                    </h2>
+                </div>
+
+                <div class="filter-group">
+                    <h3>Categorías</h3>
+                    <ul class="filter-list" id="category-filters">
+                    </ul>
+                </div>
+
+                <div class="filter-group">
+                    <h3>Marcas</h3>
+                    <select id="brand-filter" class="form-select">
+                        <option value="all">Todas las Marcas</option>
+                        <!-- Las marcas se cargan dinámicamente desde script.js -->
+                        <option option="Otro">Otras Marcas</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <h3>Rango de Precio (COP)</h3>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <input type="number" id="price-min" placeholder="Mínimo" class="form-select" min="0"
+                            onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                            style="width: 100%; padding: 8px; -moz-appearance: textfield;">
+                        <span style="color: var(--text-color);">-</span>
+                        <input type="number" id="price-max" placeholder="Máximo" class="form-select" min="0"
+                            onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                            style="width: 100%; padding: 8px; -moz-appearance: textfield;">
+                    </div>
+                </div>
+            </aside>
+
+            <main class="product-grid-container">
+                <div class="sort-bar">
+                    <p>Mostrando 12 de 30 productos</p>
+                    <select id="sort-order" class="form-select">
+                        <option value="featured">Destacados</option>
+                        <option value="price-asc">Precio: Más bajo primero</option>
+                        <option value="price-desc">Precio: Más alto primero</option>
+                        <option value="name-asc">Nombre: A-Z</option>
+                    </select>
+                </div>
+
+                <div class="product-grid" id="product-list">
+                </div>
+
+                <div class="pagination" id="pagination-controls">
+                    <button class="button button-outline" id="prev-page"><i class="fas fa-arrow-left"></i>
+                        Anterior</button>
+                    <span id="page-info">Página 1</span>
+                    <button class="button button-outline" id="next-page">Siguiente <i
+                            class="fas fa-arrow-right"></i></button>
+                </div>
+            </main>
+        </div>
+    </section>
+
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h3><i class="fas fa-shopping-cart"></i> Tu Carrito</h3>
+            <button class="close-cart-btn" onclick="toggleCart()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items-list" id="cart-items-list">
+            <p class="empty-cart-message">El carrito está vacío.</p>
+        </div>
+        <div class="cart-summary">
+            <div class="summary-line">
+                <span>Subtotal:</span>
+                <span id="cart-subtotal">$0.00</span>
+            </div>
+            <div class="summary-line total-line">
+                <strong>Total:</strong>
+                <strong id="cart-total">$0.00</strong>
+            </div>
+            <button class="button button-primary button-checkout" onclick="procedeToCheckout()"
+                id="btn-procede-checkout" disabled>
+                <i class="fas fa-credit-card"></i> Proceder al Pago
+            </button>
+            <button class="button button-secondary" onclick="toggleCart()">Seguir Comprando</button>
+        </div>
+    </div>
+    <div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+
+    <section class="checkout-section hidden-section" id="checkout-section"
+        style="background-color: #ffffff !important; background-image: none;">
+        <div class="container checkout-container" style="background-color: #ffffff;">
+            <button class="button button-outline back-to-shop" onclick="backToCart()"><i class="fas fa-arrow-left"></i>
+                Volver al Carrito</button>
+
+            <div class="section-header">
+                <h2 class="section-heading">Finalizar Compra</h2>
+                <p class="section-subheading">Completa tus datos de envío y pago.</p>
+            </div>
+
+            <div class="checkout-grid">
+                <div class="checkout-form-col">
+                    <form id="payment-form" class="contact-form">
+                        <h3>1. Dirección de Envío</h3>
+                        <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <div class="form-group" style="flex: 1; margin: 0;">
+                                <label>Departamento</label>
+                                <select id="shipping-depto" required
+                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: var(--text-color);">
+                                    <option value="">Seleccione departamento...</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex: 1; margin: 0;">
+                                <label>Ciudad</label>
+                                <select id="shipping-city" required disabled
+                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: var(--text-color);">
+                                    <option value="">Primero seleccione Dpto.</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Dirección Completa e Indicaciones</label>
+                            <input type="text" id="shipping-address" required
+                                placeholder="Calle 123 #45-67, Torre 1 Apto 201 - Frente al parque">
+                        </div>
+
+                        <h3>2. Pago por Consignación o Transferencia</h3>
+                        <div class="payment-info-box"
+                            style="background: rgba(175,148,79,0.06); padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid var(--primary-color);">
+                            <p style="margin-bottom: 15px;">Para completar tu pedido, por favor realiza la transferencia
+                                a una de nuestras cuentas:</p>
+                            <ul style="list-style: none; padding: 0;">
+                                <li style="margin-bottom: 10px;"><strong>Bancolombia (Ahorros):</strong> 02068128393
+                                </li>
+                                <li style="margin-bottom: 10px;"><strong>llave bre-b</strong> @duran0095</li>
+                                <li><strong>Titular:</strong> Relojería Durán S.A.S</li>
+                            </ul>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="payment-proof">Adjuntar Comprobante de Pago (JPG, PNG, PDF)</label>
+                            <div class="file-upload-wrapper"
+                                style="position: relative; overflow: hidden; display: inline-block; width: 100%;">
+                                <input type="file" id="payment-proof" name="payment_proof"
+                                    accept="image/jpeg,image/png,image/svg+xml,.jpg,.jpeg,.png,.svg" required
+                                    style="width: 100%; padding: 10px; border: 2px dashed #ddd; border-radius: 5px; cursor: pointer;">
+                            </div>
+                            <small style="color: #666; margin-top: 5px; display: block;">Tamaño máximo recomendado:
+                                5MB</small>
+                        </div>
+
+                        <button type="submit" class="button button-primary button-lg"
+                            style="width: 100%; margin-top: var(--spacing-md);">
+                            <span class="btn-text">Confirmar Pago de <span id="payment-amount">$0.00</span></span>
+                            <div class="btn-loader" style="display: none;"></div>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="checkout-summary-col">
+                    <div class="order-summary-box">
+                        <h3>Resumen de la Orden</h3>
+                        <div class="summary-details" id="checkout-order-summary">
+                        </div>
+                        <div class="summary-line total-line">
+                            <span>Subtotal Productos:</span>
+                            <span id="checkout-subtotal">$0.00</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>Envío Estándar:</span>
+                            <span id="checkout-shipping">$15.00</span>
+                        </div>
+                        <div class="summary-line total-line final-total">
+                            <strong>Total a Pagar:</strong>
+                            <strong id="checkout-final-total">$0.00</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="auth-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" aria-label="Cerrar modal">&times;</span>
+            <div class="forms-section">
+                <div class="brand-logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <h1>RD <span style="font-weight: 400;">WATCH</span></h1>
+                    <p>Accede para gestionar tu carrito y pedidos.</p>
+                </div>
+                <div class="forms">
+                    <div class="tabs">
+                        <div class="form-wrapper is-active" data-tab="login">
+                            <button class="switcher switcher-login is-active">
+                                Iniciar Sesión
+                                <span class="underline"></span>
+                            </button>
+                            <form id="loginForm" class="form form-login">
+                                <fieldset>
+                                    <legend>Por favor, introduce tu email y contraseña</legend>
+                                    <div class="input-block">
+                                        <label for="login-email">E-mail</label>
+                                        <input id="login-email" type="email" required>
+                                        <p class="input-error"></p>
+                                    </div>
+                                    <div class="input-block password-wrapper">
+                                        <label for="login-password">Contraseña</label>
+                                        <input id="login-password" type="password" required>
+                                        <button type="button" class="toggle-password" aria-label="Mostrar contraseña"><i
+                                                class="fas fa-eye"></i></button>
+                                        <p class="input-error"></p>
+                                    </div>
+                                    <div class="form-options">
+                                        <label class="remember-me">
+                                            <input type="checkbox"> Recuérdame
+                                        </label>
+                                        <a href="#" class="forgot-password">¿Olvidaste la contraseña?</a>
+                                    </div>
+                                </fieldset>
+                                <button type="submit" class="button button-primary btn-login">
+                                    <span class="btn-text">Iniciar Sesión</span>
+                                    <div class="btn-loader" style="display: none;"></div>
+                                </button>
+                                <div class="social-login">
+                                    <p>O inicia sesión con:</p>
+                                    <div class="social-btns">
+                                        <button type="button" class="social-btn google" title="Google" id="googleLogin">
+                                            <i class="fab fa-google"></i>
+                                        </button>
+
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="form-wrapper" data-tab="signup">
+                            <button class="switcher switcher-signup">
+                                Registrarse
+                                <span class="underline"></span>
+                            </button>
+                            <form id="signupForm" class="form form-signup">
+                                <fieldset>
+                                    <legend>Crea tu cuenta con nosotros</legend>
+                                    <div class="input-block">
+                                        <label for="signup-name">Nombre Completo</label>
+                                        <input id="signup-name" type="text" required>
+                                        <p class="input-error"></p>
+                                    </div>
+                                    <div class="input-block">
+                                        <label for="signup-email">E-mail</label>
+                                        <input id="signup-email" type="email" required>
+                                        <p class="input-error"></p>
+                                    </div>
+                                    <div class="input-block">
+                                        <label for="signup-phone">Teléfono (Opcional)</label>
+                                        <input id="signup-phone" type="tel">
+                                        <p class="input-error"></p>
+                                    </div>
+                                    <div class="input-block password-wrapper">
+                                        <label for="signup-password">Contraseña</label>
+                                        <input id="signup-password" type="password" required>
+                                        <button type="button" class="toggle-password" aria-label="Mostrar contraseña"><i
+                                                class="fas fa-eye"></i></button>
+                                        <p class="input-error"></p>
+                                    </div>
+                                    <div class="password-strength">
+                                        <p class="strength-text">Fuerza de Contraseña: <span
+                                                id="strength-text">Débil</span></p>
+                                        <div class="strength-meter">
+                                            <div class="strength-bar" id="strength-bar-1"></div>
+                                            <div class="strength-bar" id="strength-bar-2"></div>
+                                            <div class="strength-bar" id="strength-bar-3"></div>
+                                        </div>
+                                    </div>
+                                    <div class="input-block password-wrapper">
+                                        <label for="signup-password-confirm">Confirmar Contraseña</label>
+                                        <input id="signup-password-confirm" type="password" required>
+                                        <p class="input-error"></p>
+                                    </div>
+                                    <div class="terms-checkbox">
+                                        <label>
+                                            <input type="checkbox" required> Acepto los <a href="#">términos y
+                                                condiciones</a>.
+                                        </label>
+                                    </div>
+                                </fieldset>
+                                <button type="submit" class="button button-secondary btn-signup">
+                                    <span class="btn-text">Registrarse</span>
+                                    <div class="btn-loader" style="display: none;"></div>
+                                </button>
+                                <div class="social-login">
+                                    <p>O regístrate con:</p>
+                                    <div class="social-btns">
+                                        <button type="button" class="social-btn google" title="Google"
+                                            id="googleSignup">
+                                            <i class="fab fa-google"></i>
+                                        </button>
+
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="floating-cart-btn" id="floating-cart-btn" onclick="toggleCart()">
+        <i class="fas fa-shopping-cart"></i>
+        <span class="cart-count" id="cart-item-count">0</span>
+    </button>
+
+    <div id="product-detail-modal" class="modal">
+        <div class="modal-content product-modal-content">
+            <span class="close-modal close-product-modal">&times;</span>
+            <div class="product-modal-grid">
+                <div class="modal-img-wrapper">
+                    <img id="modal-img" src="" alt="Producto">
+                </div>
+                <div class="modal-info-wrapper">
+                    <span class="badge" id="modal-category">Categoría</span>
+                    <h2 id="modal-title">Nombre del Reloj</h2>
+                    <h3 id="modal-price" style="color: var(--primary-color); font-size: 1.8rem;">$0</h3>
+                    <p id="modal-brand"><strong>Marca:</strong> <span></span></p>
+                    <div class="modal-description-box">
+                        <h4>Descripción:</h4>
+                        <p id="modal-desc">Detalles del producto...</p>
+                    </div>
+                    <p id="modal-stock" style="margin: 15px 0; color: #666;">Stock: 0</p>
+
+                    <div class="modal-actions">
+                        <input type="number" id="modal-qty" value="1" min="1"
+                            style="width: 60px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <button class="button button-primary" id="modal-add-btn">
+                            <i class="fas fa-cart-plus"></i> Agregar al Carrito
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="container"
+                style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+
+                <div class="footer-about" style="max-width: 800px;">
+                    <a href="index.html" class="footer-logo">
+                        <i class="fas fa-clock"></i> Relojería Durán
+                    </a>
+                    <p class="footer-about-text">
+                        Expertos en restauración, mantenimiento y venta de relojes, herramientas y repuestos originales
+                        de alta gama desde 1970.
+                    </p>
+
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="container" style="flex-direction: column; gap: 15px;">
+
+                <div class="footer-links">
+                    <a href="politica-privacidad.html">Política de cookies</a>
+                    <a href="politica-privacidad.html">Política de privacidad</a>
+                    <a href="aviso-legal.html">Aviso legal</a>
+                    <a href="https://maps.app.goo.gl/2gRieJjKkeFFvC9m6" target="_blank">Mapa del sitio</a>
+                </div>
+
+                <p>&copy; 2025 Relojería Durán. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <button id="back-to-top" class="back-to-top" aria-label="Volver arriba">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="js/config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/security.js"></script>
+    <script src="js/script.js"></script>
+</body>
+
+</html>

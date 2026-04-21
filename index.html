@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relojería Durán - Más de 50 Años Manejando el Tiempo</title>
+    <meta name="description"
+        content="Relojería Durán: experticia en reparación, repuestos, mantenimiento de relojes de cuarzo, automáticos y de pared/pedestal.">
+    <meta name="author" content="ADSO">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+        integrity="sha384-5e2ESR8Ycmos6g3gAKr1Jvwye8sW4U1u/cAKulfVJnkakCcMqhOudbtPnvJ+nbv7" crossorigin="anonymous">
+    <link rel="stylesheet" href="src/css/style.css?v=1.1">
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="shortcut icon" href="img/favicon.ico">
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+    <div id="notification" class="notification"></div>
+
+    <div class="preloader">
+        <div class="watch-loader">
+            <div class="watch-face">
+                <div class="hour-hand"></div>
+                <div class="minute-hand"></div>
+                <div class="second-hand"></div>
+            </div>
+        </div>
+        <div class="preloader-brand">
+            <span class="brand-name">RELOJERÍA DURÁN</span>
+            <span class="brand-subtitle">EXCELENCIA EN CADA SEGUNDO</span>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="container header-container">
+            <div class="header-logo">
+                <a href="#"><i class="fas fa-clock logo-icon"></i> <span>Relojería</span> Durán</a>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="#services-section" class="nav-link">Servicios</a></li>
+                    <li><a href="#about-us-section" class="nav-link">Sobre Nosotros</a></li>
+                    <li><a href="#reviews-section" class="nav-link">Reseñas</a></li>
+                    <li><a href="#gallery-section" class="nav-link">Galería</a></li>
+                    <!-- NUEVO: enlace directo al comercio -->
+                    <li><a href="src/comercio.html" class="nav-link">Comercio</a></li>
+                </ul>
+            </nav>
+            <div class="header-actions">
+                <button id="login-btn" class="button button-secondary"><i class="fas fa-user"></i> Mi Cuenta</button>
+                <a href="#contact-section" class="button button-primary"><i class="fas fa-phone-alt"></i> Contacto</a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Menú móvil">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <div id="auth-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">×</span>
+            <section class="forms-section">
+                <div class="brand-logo">
+                    <i class="fas fa-clock"></i>
+                    <h1>Relojería Durán</h1>
+                </div>
+                <div class="forms">
+                    <div class="form-wrapper is-active">
+                        <button type="button" class="switcher switcher-login">
+                            INICIA SESIÓN
+                            <span class="underline"></span>
+                        </button>
+                        <form class="form form-login" id="loginForm">
+                            <fieldset>
+                                <div class="input-block">
+                                    <label for="login-email">Correo electrónico</label>
+                                    <input id="login-email" type="email" placeholder="tucorreo@ejemplo.com" required>
+                                </div>
+                                <div class="input-block">
+                                    <label for="login-password">Contraseña</label>
+                                    <div class="password-wrapper">
+                                        <input id="login-password" type="password" placeholder="••••••••" required>
+                                        <button type="button" class="toggle-password" aria-label="Mostrar contraseña">
+                                            <i class="far fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-options">
+                                    <label class="remember-me">
+                                        <input type="checkbox"> Recordar sesión
+                                    </label>
+                                    <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                                </div>
+                            </fieldset>
+                            <button type="submit" class="btn-login">
+                                <span class="btn-text">INICIAR SESIÓN</span>
+                                <span class="btn-loader"></span>
+                            </button>
+                            <div class="social-login">
+                                <p>O inicia sesión con</p>
+                                <div class="social-btns">
+                                    <button type="button" class="social-btn google" title="Google" id="googleLogin">
+                                        <i class="fab fa-google"></i>
+                                    </button>
+
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="form-wrapper">
+                        <button type="button" class="switcher switcher-signup">
+                            REGÍSTRATE
+                            <span class="underline"></span>
+                        </button>
+                        <form class="form form-signup" id="signupForm">
+                            <fieldset>
+                                <div class="input-block">
+                                    <label for="signup-name">Nombre completo</label>
+                                    <input id="signup-name" type="text" placeholder="Juan Pérez" required>
+                                    <span class="input-error" id="signup-name-error"></span>
+                                </div>
+                                <div class="input-block">
+                                    <label for="signup-email">Correo electrónico</label>
+                                    <input id="signup-email" type="email" placeholder="tucorreo@ejemplo.com" required>
+                                </div>
+                                <div class="input-block">
+                                    <label for="signup-phone">Teléfono</label>
+                                    <input id="signup-phone" type="tel" placeholder="3001234567" maxlength="10"
+                                        minlength="10" pattern="\d{10}"
+                                        title="El teléfono debe tener 10 dígitos numéricos" required>
+                                    <span class="input-error" id="signup-phone-error"></span>
+                                </div>
+                                <div class="input-block">
+                                    <label for="signup-password">Contraseña</label>
+                                    <div class="password-wrapper">
+                                        <input id="signup-password" type="password" placeholder="••••••••" required>
+                                        <button type="button" class="toggle-password" aria-label="Mostrar contraseña">
+                                            <i class="far fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-strength">
+                                        <div class="strength-meter">
+                                            <span class="strength-bar"></span>
+                                            <span class="strength-bar"></span>
+                                            <span class="strength-bar"></span>
+                                            <span class="strength-bar"></span>
+                                        </div>
+                                        <span class="strength-text">Seguridad: <span
+                                                id="strength-text">Débil</span></span>
+                                    </div>
+                                    <div class="password-requirements">
+                                        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 8px 0 4px 0;">La
+                                            contraseña debe contener:</p>
+                                        <ul
+                                            style="font-size: 0.8rem; color: var(--text-muted); list-style: none; padding: 0; margin: 0;">
+                                            <li id="req-length"><i class="fas fa-circle"
+                                                    style="font-size: 0.5rem; margin-right: 6px;"></i>Mínimo 8
+                                                caracteres</li>
+                                            <li id="req-uppercase"><i class="fas fa-circle"
+                                                    style="font-size: 0.5rem; margin-right: 6px;"></i>Una letra
+                                                mayúscula</li>
+                                            <li id="req-number"><i class="fas fa-circle"
+                                                    style="font-size: 0.5rem; margin-right: 6px;"></i>Un número</li>
+                                            <li id="req-special"><i class="fas fa-circle"
+                                                    style="font-size: 0.5rem; margin-right: 6px;"></i>Un carácter
+                                                especial (!@#$%^&*)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="input-block">
+                                    <label for="signup-password-confirm">Confirmar contraseña</label>
+                                    <div class="password-wrapper">
+                                        <input id="signup-password-confirm" type="password" placeholder="••••••••"
+                                            required>
+                                    </div>
+                                </div>
+                                <div class="terms-checkbox">
+                                    <label>
+                                        <input type="checkbox" required>
+                                        Acepto los <a href="#">términos y condiciones</a>
+                                    </label>
+                                </div>
+                            </fieldset>
+                            <button type="submit" class="btn-signup">
+                                <span class="btn-text">CREAR CUENTA</span>
+                                <span class="btn-loader"></span>
+                            </button>
+                            <div class="social-login">
+                                <p>O regístrate con</p>
+                                <div class="social-btns">
+                                    <button type="button" class="social-btn google" title="Google" id="googleSignup">
+                                        <i class="fab fa-google"></i>
+                                    </button>
+
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- NUEVO: Formulario de Recuperación (Oculto inicialmente) -->
+                    <div class="form-wrapper" id="forgot-password-wrapper" style="display: none;">
+                        <button type="button" class="switcher">
+                            RECUPERAR ACCESO
+                            <span class="underline"></span>
+                        </button>
+                        <form class="form" id="forgotPasswordForm">
+                            <p style="font-size: 0.9rem; margin-bottom: 20px; color: var(--text-light);">
+                                Ingresa tu correo electrónico y te enviaremos un código para restablecer tu contraseña.
+                            </p>
+                            <fieldset>
+                                <div class="input-block">
+                                    <label for="forgot-email">Correo electrónico</label>
+                                    <input id="forgot-email" type="email" placeholder="tucorreo@ejemplo.com" required>
+                                </div>
+                            </fieldset>
+                            <button type="submit" class="button button-primary" style="width: 100%; margin-top: 10px;">
+                                <span class="btn-text">ENVIAR ENLACE</span>
+                                <span class="btn-loader"></span>
+                            </button>
+                            <p style="text-align: center; margin-top: 15px;">
+                                <a href="#" id="back-to-login" style="font-size: 0.85rem;">Volver al inicio de
+                                    sesión</a>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <main>
+        <section class="hero-section">
+            <div class="hero-overlay"></div>
+            <div class="container hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">Relojería Durán</h1>
+                    <p class="hero-subtitle">Más de 50 años manejando el tiempo con precisión y elegancia</p>
+                    <div class="hero-buttons">
+                        <a href="#services-section" class="button button-primary hero-button">
+                            <span>Nuestros Servicios</span>
+                            <i class="fas fa-arrow-down"></i>
+                        </a>
+                        <a href="#contact-section" class="button button-outline hero-button">
+                            <span>Contacto Rápido</span>
+                            <i class="fas fa-phone-alt"></i>
+                        </a>
+                        <!-- NUEVO botón directo al comercio -->
+                        <a href="src/comercio.html" class="button button-secondary hero-button">
+                            <span>Ir al Comercio</span>
+                            <i class="fas fa-store"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-media-area">
+                    <video autoplay muted loop playsinline class="hero-video-element">
+                        <source src="src/css/hero_video.mp4" type="video/mp4">
+                    </video>
+                    <div class="hero-video-overlay"></div>
+                </div>
+            </div>
+            <div class="scroll-indicator">
+                <div class="mouse">
+                    <div class="wheel"></div>
+                </div>
+                <span>Desplázate</span>
+            </div>
+        </section>
+
+        <section id="services-section" class="services-section">
+            <div class="section-pattern"></div>
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-heading">Nuestros Servicios Exclusivos</h2>
+                    <p class="section-subheading">Precisión y excelencia en cada detalle</p>
+                    <div class="section-divider">
+                        <div class="divider-line"></div>
+                        <i class="fas fa-clock divider-icon"></i>
+                        <div class="divider-line"></div>
+                    </div>
+                </div>
+                <div class="services-slider" id="public-services-grid">
+                    <!-- Los servicios se cargarán dinámicamente aquí -->
+                    <div style="grid-column: 1/-1; text-align: center; width: 100%;">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando servicios...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about-us-section" class="about-us-section">
+            <div class="container about-us-grid">
+                <div class="about-us-content">
+                    <div class="section-header">
+                        <h2 class="section-heading">Nuestra Historia</h2>
+                        <p class="section-subheading">Desde 1972</p>
+                        <div class="section-divider">
+                            <div class="divider-line"></div>
+                            <i class="fas fa-history divider-icon"></i>
+                            <div class="divider-line"></div>
+                        </div>
+                    </div>
+                    <div class="about-us-text">
+                        <p>Hernando Durán empieza sus labores de oficios varios en la joyería la milagrosa en 1972,
+                            donde empieza a interesarse por la relojería.
+                            En el año 1974 empieza formalmente a reparar relojes, se formó como técnico relojero en el
+                            SENA, realizando alrededor de 10 cursos, entre los cuales algunos eran patrocionados por
+                            marcas de reloejs como
+                            Orient, Citizen, Seiko.</p>
+                        <p>Hoy combina su conocimiento adquirido a lo largo de sus 50 años de formación para brindar uno
+                            de los mejores
+                            servicios de relojería de la ciudad de Bucaramanga.
+                        </p>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number" id="stat-years" data-count="50">0</div>
+                            <div class="stat-label">Años de experiencia</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="stat-repaired" data-count="12000">0</div>
+                            <div class="stat-label">Relojes reparados</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="stat-satisfaction" data-count="98">0</div>
+                            <div class="stat-label">% Clientes satisfechos</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-us-image-wrapper">
+                    <div class="image-frame">
+                        <video autoplay muted loop playsinline class="about-us-image">
+                            <source src="src/css/reel_duran_3.mp4" type="video/mp4">
+                        </video>
+                        <div class="frame-decoration"></div>
+                    </div>
+                    <div class="experience-badge">
+                        <span>Desde</span>
+                        <strong>1972</strong>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="gallery-section" class="gallery-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-heading">Nuestro Trabajo</h2>
+                    <p class="section-subheading">Precisión convertida en arte</p>
+                    <div class="section-divider">
+                        <div class="divider-line"></div>
+                        <i class="fas fa-camera divider-icon"></i>
+                        <div class="divider-line"></div>
+                    </div>
+                </div>
+                <div class="gallery-carousel-container">
+                    <button class="gallery-btn prev"><i class="fas fa-chevron-left"></i></button>
+                    <div class="gallery-track-wrapper">
+                        <div class="gallery-track" id="gallery-track">
+                            <div class="gallery-slide active">
+                                <video controls playsinline muted>
+                                    <source src="src/css/reel%20duran%20%231.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="gallery-slide">
+                                <video controls playsinline muted>
+                                    <source src="src/css/reel%20duran%20%232.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="gallery-btn next"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </section>
+        <section id="reviews-section" class="reviews-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-heading">Lo que dicen nuestros clientes</h2>
+                    <p class="section-subheading">Testimonios reales de quienes confían en nosotros</p>
+                    <div class="section-divider">
+                        <div class="divider-line"></div>
+                        <i class="fas fa-quote-right divider-icon"></i>
+                        <div class="divider-line"></div>
+                    </div>
+                </div>
+                <div class="reviews-slider">
+                    <div class="review-card">
+                        <div class="review-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <p class="review-text">"Mi Rolex Submariner dejó de funcionar después de un baño en el mar. En
+                            Relojería Durán no solo lo repararon, sino que lo dejaron mejor que nuevo. La atención
+                            personalizada y la garantía de por vida en su trabajo me tienen completamente satisfecho."
+                        </p>
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar"
+                                style="background:#2a2a2a; color:var(--primary-color); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.3rem;">
+                                C</div>
+                            <div class="reviewer-details">
+                                <p class="reviewer-name">Carlos Rodríguez</p>
+                                <p class="reviewer-role">CEO, TechSolutions</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="review-card">
+                        <div class="review-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <p class="review-text">"El reloj de mi abuelo, con más de 80 años de antigüedad, estaba en mal
+                            estado. Los expertos de Durán lo restauraron con un cuidado excepcional, manteniendo su
+                            esencia original. Ahora funciona perfectamente y luce como el primer día."</p>
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar"
+                                style="background:#2a2a2a; color:var(--primary-color); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.3rem;">
+                                M</div>
+                            <div class="reviewer-details">
+                                <p class="reviewer-name">María González</p>
+                                <p class="reviewer-role">Directora de Museo</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="review-card">
+                        <div class="review-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <p class="review-text">"Como coleccionista de relojes, he visitado muchos talleres. Ninguno se
+                            compara con el nivel de expertise que encontré aquí. Su conocimiento técnico y la calidad de
+                            los repuestos originales que manejan es incomparable."</p>
+                        <div class="reviewer-info">
+                            <div class="reviewer-avatar"
+                                style="background:#2a2a2a; color:var(--primary-color); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.3rem;">
+                                A</div>
+                            <div class="reviewer-details">
+                                <p class="reviewer-name">Alejandro Mendoza</p>
+                                <p class="reviewer-role">Coleccionista</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="review-cta">
+                    <p>¿Listo para experimentar nuestro servicio de primera clase?</p>
+                    <a href="#contact-section" class="button button-primary">Agenda una cita hoy</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact-section" class="contact-section">
+            <div class="container contact-grid">
+                <div class="contact-info">
+                    <h2 class="section-heading">Contáctanos</h2>
+                    <p class="contact-subtitle">Estamos aquí para ayudarte con todas tus necesidades de relojería</p>
+
+                    <div class="contact-method">
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>Visítanos</h3>
+                            <p>Calle 34 #18-40 local 107 en el pasaje del Hotel Andino<br>Bucaramanga, Santander</p>
+                        </div>
+                    </div>
+
+                    <div class="contact-method">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>Llámanos</h3>
+                            <p>+57 3115460069<br>Lunes a Viernes: 10am - 6pm</p>
+                        </div>
+                    </div>
+
+                    <div class="contact-method">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="contact-details">
+                            <h3>Escríbenos</h3>
+                            <p>rdwatchcontacto@gmail.com<br>Respuesta en menos de 24 horas</p>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <div class="contact-form-wrapper">
+                    <form id="contactForm" class="contact-form">
+                        <h3>Envíanos un mensaje</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <input type="text" id="contact-name" placeholder="Nombre completo" required>
+                                <span class="input-error"></span>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" id="contact-email" placeholder="Correo electrónico" required>
+                                <span class="input-error"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" id="contact-phone" placeholder="Teléfono" maxlength="10" minlength="10"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <textarea id="contact-message" rows="5" placeholder="Describe tu consulta o necesidad..."
+                                required></textarea>
+                            <span class="input-error"></span>
+                        </div>
+                        <div class="form-actions" style="justify-content: center;">
+                            <button type="submit" class="button button-primary" style="width: 100%; max-width: 400px;">
+                                <span class="btn-text">Enviar Mensaje</span>
+                                <span class="btn-loader"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+
+    </main>
+
+    <div id="cookie-banner" class="cookie-banner">
+        <div class="cookie-content">
+            <p>Utilizamos cookies propias y de terceros para mejorar nuestros servicios y mostrarle publicidad
+                relacionada con sus preferencias. Al continuar navegando, acepta nuestra
+                <a href="src/politica-privacidad.html" class="cookie-link">Política de cookies</a>.
+            </p>
+        </div>
+        <div class="cookie-actions">
+            <button id="accept-cookies" class="button button-primary cookie-button">Aceptar y Continuar</button>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="container footer-grid" style="display:flex; justify-content:center; text-align:center;">
+            <!-- Columna 1: Branding -->
+            <div class="footer-col footer-brand" style="max-width: 600px;">
+                <a href="index.html" class="footer-logo" style="justify-content:center;">
+                    <i class="fas fa-clock logo-icon"></i>
+                    <span>Relojería</span> DURÁN
+                </a>
+                <div class="footer-legal-links">
+                    <a href="src/politica-privacidad.html">Política de cookies</a>
+                    <a href="src/politica-privacidad.html">Política de privacidad</a>
+                    <a href="src/aviso-legal.html">Aviso legal</a>
+                    <a href="https://maps.app.goo.gl/2gRieJjKkeFFvC9m6" target="_blank">Mapa del sitio</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="container footer-bottom-content" style="justify-content:center;">
+                <p class="copyright">&copy; 2025 Relojería Durán. La excelencia en cada segundo.</p>
+            </div>
+        </div>
+    </footer>
+
+    <button id="back-to-top" class="back-to-top" aria-label="Volver arriba">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="src/js/config.js"></script>
+    <script src="src/js/notifications.js"></script>
+    <script src="src/js/security.js"></script>
+    <script src="src/js/script.js?v=1.1"></script>
+</body>
+
+</html>

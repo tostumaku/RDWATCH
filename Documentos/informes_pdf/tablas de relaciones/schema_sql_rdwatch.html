@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Backend Code Portal - RD WATCH V2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: rgba(22, 27, 34, 0.9);
+            --accent-color: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: rgba(48, 54, 61, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --success: #238636;
+            --warning: #d29922;
+            --error: #f85149;
+            --atomic: #bc8cff;
+            --code-bg: #010409;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 350px;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #58a6ff, #bc8cff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-box {
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 0.7rem 1rem 0.7rem 2.5rem;
+            border-radius: 10px;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            opacity: 0.5;
+        }
+
+        .module-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding-right: 5px;
+        }
+
+        .module-card {
+            padding: 0.8rem;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .module-card:hover {
+            background: rgba(88, 166, 255, 0.05);
+            border-color: rgba(88, 166, 255, 0.2);
+        }
+
+        .module-card.active {
+            background: rgba(88, 166, 255, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .module-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .module-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 10%, #161b22 0%, #0d1117 100%);
+        }
+
+        /* --- Code Viewer Area --- */
+        #code-area {
+            height: 50%;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            background: var(--code-bg);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-header {
+            padding: 0.7rem 1.5rem;
+            background: rgba(48, 54, 61, 0.3);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .code-container {
+            flex: 1;
+            overflow: auto;
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #d1d5db;
+        }
+
+        pre {
+            margin: 0;
+            tab-size: 4;
+        }
+
+        .keyword {
+            color: #ff7b72;
+            font-weight: 700;
+        }
+
+        .function {
+            color: #d2a8ff;
+        }
+
+        .comment {
+            color: #8b949e;
+            font-style: italic;
+        }
+
+        .inline-comment {
+            padding-left: 2rem;
+            /* Aleja los comentarios a la derecha */
+        }
+
+        .string {
+            color: #a5d6ff;
+        }
+
+        .type {
+            color: #ffa657;
+        }
+
+        /* --- Detail Table Area --- */
+        #detail-area {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.8rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--accent-color);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.2);
+            text-align: left;
+            padding: 12px 15px;
+            color: var(--text-dim);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
+            cursor: pointer;
+        }
+
+        tr:hover {
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        code-inline {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: white;
+            display: inline-block;
+        }
+
+        .tag-select {
+            background: var(--accent-color);
+        }
+
+        .tag-insert {
+            background: var(--success);
+        }
+
+        .tag-update {
+            background: var(--warning);
+            color: black;
+        }
+
+        .tag-delete {
+            background: var(--error);
+        }
+
+        .tag-atomic {
+            background: var(--atomic);
+        }
+
+        .php-badge {
+            font-size: 0.7rem;
+            background: #30363d;
+            color: #8b949e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            margin-top: 5rem;
+            color: var(--text-dim);
+        }
+
+        .btn-view-code {
+            padding: 4px 10px;
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            border-radius: 15px;
+            color: var(--accent-color);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .highlight-line {
+            background: rgba(88, 166, 255, 0.1);
+            border-left: 2px solid var(--accent-color);
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <h1>RD WATCH V2</h1>
+        <p style="font-size: 0.75rem; color: var(--text-dim);">Portal de Esquema & Modelo de Datos</p>
+
+        <div class="search-box">
+            <input type="text" id="global-search" placeholder="Buscar tabla o columna......">
+        </div>
+
+        <div class="module-list" id="module-list">
+            <!-- Populated via JS -->
+        </div>
+
+        <div
+            style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.7rem; color: var(--text-dim);">
+            <p>Estado: Sistema Unificado</p>
+            <p>© 2026 Relojería Durán</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="code-area">
+            <div class="code-header">
+                <span id="code-filename">Seleccione una función para inspeccionar</span>
+                <span id="code-stats">PL/pgSQL</span>
+            </div>
+            <div class="code-container">
+                <pre id="code-display" class="fade-in">-- Haga clic en una función de la tabla inferior para ver su lógica SQL completa.
+-- Aquí se mostrará la implementación detallada de PostgreSQL.</pre>
+            </div>
+        </div>
+
+        <div id="detail-area">
+            <!-- Contenido dinámico aquí -->
+            <div class="empty-state">
+                <p>Seleccione un módulo en la barra lateral para comenzar</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const functionCode = {
+            'tab_Usuarios': `CREATE TABLE IF NOT EXISTS tab_Usuarios                               -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_usuario              BIGINT NOT NULL,                          -- Identificador único del usuario
+    nom_usuario             VARCHAR(100) NOT NULL,                    -- Nombre completo del usuario
+    correo_usuario          VARCHAR(100) NOT NULL,                    -- Correo electrónico del usuario
+    num_telefono_usuario    BIGINT NOT NULL CHECK (LENGTH(CAST(num_telefono_usuario AS TEXT)) = 10),    -- Número de teléfono (10 dígitos)
+    direccion_principal     VARCHAR(255),                             -- Dirección del usuario
+    fecha_registro          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,      -- Marca de tiempo automática inyectada nativamente por el DBMS
+    activo                  BOOLEAN DEFAULT TRUE,                     -- Bandera booleana de estado con valor inicial pre-configurado
+    contra                  VARCHAR(255) NOT NULL,                    -- Hash de contraseña (Bcrypt)
+    rol                     VARCHAR(20) DEFAULT 'cliente',            -- Rol del usuario
+    salt                    VARCHAR(255),                             -- Columna estándar destinada a almacenar cadenas de caracteres
+    intentos_fallidos       SMALLINT DEFAULT 0,                       -- Campo numérico inicializado automáticamente con valor por defecto
+    bloqueado               BOOLEAN DEFAULT FALSE,                    -- Bandera booleana de estado con valor inicial pre-configurado
+    fecha_bloqueo           TIMESTAMP,                                -- Registro de instante temporal estricto (fecha y/o hora)
+    ultimo_acceso           TIMESTAMP,                                -- Registro de instante temporal estricto (fecha y/o hora)
+    token_recuperacion      TEXT,                                     -- Columna estándar destinada a almacenar cadenas de caracteres
+    token_expiracion        TIMESTAMP,                                -- Registro de instante temporal estricto (fecha y/o hora)
+    -- Auditoría
+    usr_insert              VARCHAR(100),                             -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert              TIMESTAMP,                                -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update              VARCHAR(100),                             -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update              TIMESTAMP,                                -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete              VARCHAR(100),                             -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete              TIMESTAMP,                                -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_usuario),                                         -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (correo_usuario)                                           -- Regla de negocio indexada que fuerza la exclusividad del registro
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL
+
+-- ===================================================================
+-- SECCIÓN DE ÍNDICES Y RESTRICCIONES POST-CREACIÓN
+-- ===================================================================
+CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_correo            ON tab_Usuarios (correo_usuario);    -- Construye un índice en el motor para acelerar lecturas en la columna
+CREATE INDEX IF NOT EXISTS idx_usuarios_correo_lower            ON tab_Usuarios (LOWER(correo_usuario));    -- Construye un índice en el motor para acelerar lecturas en la columna
+CREATE INDEX IF NOT EXISTS idx_usuarios_activo                  ON tab_Usuarios (activo);    -- Construye un índice en el motor para acelerar lecturas en la columna
+CREATE INDEX IF NOT EXISTS idx_usuarios_bloqueado               ON tab_Usuarios (bloqueado);    -- Construye un índice en el motor para acelerar lecturas en la columna
+CREATE INDEX IF NOT EXISTS idx_usuarios_ultimo_acceso           ON tab_Usuarios (ultimo_acceso);    -- Construye un índice en el motor para acelerar lecturas en la columna
+CREATE INDEX IF NOT EXISTS idx_usuarios_token_recuperacion      ON tab_Usuarios (token_recuperacion);    -- Construye un índice en el motor para acelerar lecturas en la columna
+CREATE INDEX IF NOT EXISTS idx_usuarios_fecha_registro          ON tab_Usuarios (fecha_registro);    -- Construye un índice en el motor para acelerar lecturas en la columna
+CREATE INDEX IF NOT EXISTS idx_usuarios_rol                     ON tab_Usuarios (rol);    -- Construye un índice en el motor para acelerar lecturas en la columna`,
+            'tab_Categorias': `CREATE TABLE IF NOT EXISTS tab_Categorias                             -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_categoria            INT NOT NULL,                             -- Identificador único de la categoría
+    nom_categoria           VARCHAR(100) NOT NULL,                    -- Nombre de la categoría
+    descripcion_categoria   TEXT NOT NULL,                            -- Descripción de la categoría
+    estado                  BOOLEAN NOT NULL DEFAULT TRUE,            -- Indica si la categoría está activa o inactiva
+       -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_categoria),                                       -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (nom_categoria)                                            -- Regla de negocio indexada que fuerza la exclusividad del registro
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Subcategorias': `CREATE TABLE IF NOT EXISTS tab_Subcategorias                          -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_categoria            INT NOT NULL,                             -- Clave foránea a tab_Categorias
+    id_subcategoria         INT NOT NULL,                             -- Identificador único de la subcategoría
+    nom_subcategoria        VARCHAR(100) NOT NULL,                    -- Nombre de la subcategoría
+    estado                  BOOLEAN NOT NULL DEFAULT TRUE,            -- Indica si la subcategoría está activa o inactiva
+       -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_categoria, id_subcategoria),                      -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (id_categoria, nom_subcategoria),                          -- Asegura que no haya subcategorías con el mismo nombre dentro de la misma categoría
+    FOREIGN KEY (id_categoria) REFERENCES tab_Categorias(id_categoria)    -- Relación con la tabla de categorías
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Marcas': `CREATE TABLE IF NOT EXISTS tab_Marcas                                 -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_marca                BIGINT NOT NULL,                          -- Identificador único de la marca
+    nom_marca               VARCHAR(100) NOT NULL,                    -- Nombre de la marca
+    estado_marca            BOOLEAN DEFAULT TRUE,                     -- Indica si la marca está activa o inactiva
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_marca),                                           -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (nom_marca)                                                -- Regla de negocio indexada que fuerza la exclusividad del registro
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Metodos_Pago': `CREATE TABLE IF NOT EXISTS tab_Metodos_Pago                           -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_metodo_pago          SMALLINT NOT NULL,                        -- Identificador único del método de pago
+    nombre_metodo           VARCHAR(50) NOT NULL,                     -- Nombre del método de pago (ej: Tarjeta de crédito, PayPal)
+    descripcion             TEXT NOT NULL,                            -- Descripción del método de pago
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_metodo_pago),                                     -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (nombre_metodo)                                            -- Regla de negocio indexada que fuerza la exclusividad del registro
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Promociones': `CREATE TABLE IF NOT EXISTS tab_Promociones                            -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_promocion            INT NOT NULL,                             -- Identificador único de la promoción
+    descripcion             TEXT NOT NULL,                            -- Descripción detallada de la promoción
+    descuento               NUMERIC(5, 2) NOT NULL,                   -- Porcentaje de descuento (0-100)
+    fecha_inicio            TIMESTAMP NOT NULL,                       -- Fecha y hora de inicio de la promoción
+    fecha_fin               TIMESTAMP NOT NULL,                       -- Fecha y hora de fin de la promoción
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_promocion),                                       -- Llave primaria única y elemento central de identificación relacional
+    CHECK (descuento BETWEEN 0 AND 100),                              -- Porcentaje de descuento (0-100)
+    CHECK (fecha_fin >= fecha_inicio)                                 -- Asegura que la fecha de fin no sea anterior a la de inicio
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Servicios': `CREATE TABLE IF NOT EXISTS tab_Servicios                              -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_servicio             BIGINT NOT NULL,                          -- Identificador único del servicio
+    nom_servicio            VARCHAR(100) NOT NULL,                    -- Nombre del servicio
+    descripcion             TEXT NOT NULL,                            -- Descripción del servicio
+    precio_servicio         DECIMAL(15, 2) NOT NULL,                  -- Costo del servicio, no puede ser negativo
+    duracion_estimada       VARCHAR(50) NOT NULL,                     -- Duración estimada del servicio (ej. "1 hora", "2-3 días")
+    estado                  BOOLEAN NOT NULL DEFAULT TRUE,            -- Indica si el servicio está activo o inactivo
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_servicio),                                        -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (nom_servicio),                                            -- Regla de negocio indexada que fuerza la exclusividad del registro
+    CHECK (precio_servicio >= 0)                                      -- Costo del servicio, no puede ser negativo
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Contacto': `CREATE TABLE IF NOT EXISTS tab_Contacto                               -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_contacto             BIGINT NOT NULL,                          -- Identificador único del mensaje de contacto
+    nombre_remitente        VARCHAR(100) NOT NULL,                    -- Nombre de la persona que envía el mensaje
+    correo_remitente        VARCHAR(100) NOT NULL,                    -- Correo electrónico de la persona que envía el mensaje
+    telefono_remitente      BIGINT NOT NULL,                          -- Número de teléfono de la persona que envía el mensaje
+    asunto                  VARCHAR(200) NOT NULL,                    -- Asunto del mensaje
+    mensaje                 TEXT NOT NULL,                            -- Contenido del mensaje
+    fecha_envio             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,    -- Fecha y hora de envío del mensaje
+    estado                  VARCHAR(10) NOT NULL DEFAULT 'pendiente',    -- Estado del mensaje
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_contacto),                                        -- Llave primaria única y elemento central de identificación relacional
+    CHECK (estado IN ('pendiente', 'en proceso', 'resuelto', 'cerrado'))    -- Estado del mensaje
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Departamentos': `CREATE TABLE IF NOT EXISTS tab_Departamentos (                        -- Define la estructura y esquema físico de la nueva tabla de entidad
+    id_departamento         INTEGER NOT NULL,                         -- Identificador único del departamento (PK)
+    nombre_departamento     VARCHAR(100) NOT NULL,                    -- Nombre del departamento/estado/provincia
+    codigo_iso              VARCHAR(10),                              -- Código ISO (opcional)
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_departamento),                                    -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (nombre_departamento)                                      -- Regla de negocio indexada que fuerza la exclusividad del registro
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Ciudades': `CREATE TABLE IF NOT EXISTS tab_Ciudades (                             -- Define la estructura y esquema físico de la nueva tabla de entidad
+    id_ciudad              INTEGER NOT NULL,                          -- Identificador único de la ciudad
+    id_departamento        INTEGER NOT NULL,                          -- Clave foránea a tab_Departamentos
+    nombre_ciudad          VARCHAR(100) NOT NULL,                     -- Nombre de la ciudad
+    codigo_postal          VARCHAR(10),                               -- Código postal de la ciudad
+       -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_ciudad),                                          -- Llave primaria única y elemento central de identificación relacional
+    FOREIGN KEY (id_departamento) REFERENCES tab_Departamentos(id_departamento)    -- La clave foránea apunta a la PK de tab_Departamentos
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Direcciones_Envio': `CREATE TABLE IF NOT EXISTS tab_Direcciones_Envio                      -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_direccion            BIGINT,                                   -- Identificador único de la dirección de envío
+    id_usuario              BIGINT NOT NULL,                          -- Identificador del usuario al que pertenece la dirección
+    direccion_completa      VARCHAR(255) NOT NULL,                    -- Dirección postal completa
+    id_ciudad               SMALLINT NOT NULL,                        -- Ciudad
+    codigo_postal           VARCHAR(10) NOT NULL,                     -- Código postal
+    es_predeterminada       BOOLEAN DEFAULT FALSE,                    -- Indica si es la dirección predeterminada del usuario
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_direccion),                                       -- Llave primaria única y elemento central de identificación relacional
+    FOREIGN KEY (id_usuario) REFERENCES tab_Usuarios(id_usuario),     -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_ciudad) REFERENCES tab_Ciudades(id_ciudad)        -- Restricción de clave foránea que vincula a otra entidad maestra
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Productos': `CREATE TABLE IF NOT EXISTS tab_Productos                              -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_producto             BIGINT NOT NULL,                          -- Identificador único del producto
+    id_marca               BIGINT NOT NULL,                           -- Clave foránea a tab_Marcas
+    nom_producto            VARCHAR(255) NOT NULL,                    -- Nombre del producto
+    descripcion             TEXT NOT NULL,                            -- Descripción detallada del producto
+    precio                  DECIMAL(15,2) NOT NULL,                   -- Precio del producto
+    id_categoria            INT NOT NULL,                             -- Clave foránea a tab_Categorias
+    id_subcategoria         INT NOT NULL,                             -- Clave foránea a tab_Subcategorias
+    stock                   SMALLINT NOT NULL,                        -- Cantidad de stock disponible
+    url_imagen              VARCHAR(255),                             -- URL de la imagen del producto
+    fecha_creacion          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,      -- Fecha y hora de creación del registro del producto
+    estado                  BOOLEAN DEFAULT TRUE,                     -- Indica si el producto está disponible
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_producto),                                        -- Llave primaria única y elemento central de identificación relacional
+    FOREIGN KEY (id_marca) REFERENCES tab_Marcas(id_marca),           -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_categoria, id_subcategoria) REFERENCES tab_Subcategorias (id_categoria, id_subcategoria),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    CHECK (precio >= 0),                                              -- Precio del producto
+    CHECK (stock >= 0)                                                -- Cantidad de stock disponible
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Carrito': `CREATE TABLE IF NOT EXISTS tab_Carrito                                -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_carrito              BIGINT NOT NULL,                          -- Identificador único del carrito
+    id_usuario              BIGINT NOT NULL,                          -- Clave foránea a tab_Usuarios, un usuario tiene un único carrito activo
+    fecha_creacion          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,      -- Fecha y hora de creación del carrito
+    fecha_ultima_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,    -- Fecha y hora de la última modificación del carrito
+    estado_carrito          VARCHAR(50) DEFAULT 'activo',             -- Estado del carrito
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_carrito),                                         -- Llave primaria única y elemento central de identificación relacional
+    FOREIGN KEY (id_usuario) REFERENCES tab_Usuarios(id_usuario),     -- Restricción de clave foránea que vincula a otra entidad maestra
+    CHECK (estado_carrito IN ('activo', 'abandonado', 'convertido_a_orden'))    -- Estado del carrito
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Carrito_Detalle': `CREATE TABLE IF NOT EXISTS tab_Carrito_Detalle                        -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_carrito_detalle      BIGINT NOT NULL,                          -- Identificador único del detalle del carrito
+    id_carrito              BIGINT NOT NULL,                          -- Clave foránea a tab_Carrito
+    id_producto             BIGINT NOT NULL,                          -- Clave foránea a tab_Productos
+    cantidad                INT NOT NULL,                             -- Cantidad del producto en esta línea del carrito
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_carrito_detalle),                                 -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (id_carrito, id_producto),                                 -- Un producto solo puede aparecer una vez por carrito
+    FOREIGN KEY (id_carrito) REFERENCES tab_Carrito(id_carrito),      -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_producto) REFERENCES tab_Productos(id_producto),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    CHECK (cantidad > 0)                                              -- Cantidad del producto en esta línea del carrito
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Orden': `CREATE TABLE IF NOT EXISTS tab_Orden                                  -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_orden                BIGINT NOT NULL,                          -- Identificador único de la orden
+    id_usuario              BIGINT NOT NULL,                          -- Clave foránea a tab_Usuarios
+    fecha_orden             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,      -- Fecha y hora en que se realizó la orden
+    estado_orden            VARCHAR(50) NOT NULL,                     -- Estado actual de la orden
+    concepto                VARCHAR(100),                             -- Descripción o concepto general de la orden
+    total_orden             DECIMAL(15, 2) NOT NULL,                  -- Costo total de la orden (se recomienda calcular a partir de Detalle_Orden y Orden_Servicios)
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_orden),                                           -- Llave primaria única y elemento central de identificación relacional
+    FOREIGN KEY (id_usuario) REFERENCES tab_Usuarios (id_usuario),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    CHECK (estado_orden IN ('pendiente', 'confirmado', 'enviado', 'cancelado')),    -- Estado actual de la orden
+    CHECK (total_orden >= 0)                                          -- Costo total de la orden (se recomienda calcular a partir de Detalle_Orden y Orden_Servicios)
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Detalle_Orden': `CREATE TABLE IF NOT EXISTS tab_Detalle_Orden                          -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_detalle_orden        BIGINT NOT NULL,                          -- Identificador único del detalle de la orden
+    id_orden                BIGINT NOT NULL,                          -- Clave foránea a tab_Orden
+    id_producto             BIGINT NOT NULL,                          -- Clave foránea a tab_Productos
+    cantidad                INT NOT NULL,                             -- Cantidad del producto en esta línea de la orden
+    precio_unitario         DECIMAL(15, 2) NOT NULL,                  -- Precio del producto al momento de la compra
+    id_promocion_aplicada   SMALLINT,                                 -- Clave foránea a tab_Promociones (puede ser nulo si no hay promoción directa)
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_detalle_orden),                                   -- Llave primaria única y elemento central de identificación relacional
+    FOREIGN KEY (id_orden) REFERENCES tab_Orden(id_orden),            -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_producto) REFERENCES tab_Productos(id_producto),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_promocion_aplicada) REFERENCES tab_Promociones(id_promocion),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    CHECK (cantidad > 0),                                             -- Cantidad del producto en esta línea de la orden
+    CHECK (precio_unitario >= 0)                                      -- Precio del producto al momento de la compra
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Orden_Servicios': `CREATE TABLE IF NOT EXISTS tab_Orden_Servicios                        -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_orden_servicio       BIGINT NOT NULL,                          -- Identificador único del detalle de servicio en la orden
+    id_orden                BIGINT NOT NULL,                          -- Clave foránea a tab_Orden
+    id_servicio             BIGINT NOT NULL,                          -- Clave foránea a tab_Servicios
+    cantidad                INT NOT NULL,                             -- Cantidad de veces que se aplica el servicio
+    precio_servicio_aplicado DECIMAL(15, 2) NOT NULL,                 -- Precio del servicio al momento de la orden
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_orden_servicio),                                  -- Llave primaria única y elemento central de identificación relacional
+    FOREIGN KEY (id_orden) REFERENCES tab_Orden(id_orden),            -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_servicio) REFERENCES tab_Servicios(id_servicio),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    CHECK (cantidad > 0),                                             -- Cantidad de veces que se aplica el servicio
+    CHECK (precio_servicio_aplicado >= 0)                             -- Precio del servicio al momento de la orden
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Facturas': `CREATE TABLE IF NOT EXISTS tab_Facturas (                             -- Define la estructura y esquema físico de la nueva tabla de entidad
+    id_factura      BIGINT NOT NULL,                                  -- Clave primaria de la factura
+    id_orden        BIGINT NOT NULL,                                  -- ID de la orden asociada a la factura
+    id_usuario      BIGINT NOT NULL,                                  -- ID del usuario (cliente) asociado a la factura
+    fecha_emision   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,     -- Fecha y hora de emisión de la factura
+    total_factura   DECIMAL(15, 2) NOT NULL,                          -- Total de la factura
+    estado_factura  VARCHAR(50) NOT NULL DEFAULT 'Emitida',           -- Estado de la factura
+       -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_factura),                                         -- Llave primaria única y elemento central de identificación relacional
+    FOREIGN KEY (id_orden) REFERENCES tab_Orden(id_orden),            -- Relación con la tabla de Órdenes
+    FOREIGN KEY (id_usuario) REFERENCES tab_Usuarios(id_usuario)      -- Relación con la tabla de Usuarios
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL
+
+-- ===================================================================
+-- SECCIÓN DE ÍNDICES Y RESTRICCIONES POST-CREACIÓN
+-- ===================================================================
+CREATE INDEX idx_factura_orden ON tab_Facturas (id_orden);            -- Construye un índice en el motor para acelerar lecturas en la columna
+CREATE INDEX idx_factura_usuario ON tab_Facturas (id_usuario);        -- Construye un índice en el motor para acelerar lecturas en la columna`,
+            'tab_Detalle_Factura': `CREATE TABLE IF NOT EXISTS tab_Detalle_Factura (                      -- Define la estructura y esquema físico de la nueva tabla de entidad
+    id_detalle_factura    BIGINT NOT NULL,                            -- Clave primaria del detalle de factura
+    id_factura            BIGINT NOT NULL,                            -- ID de la factura a la que pertenece este detalle
+    id_producto           BIGINT NOT NULL,                            -- ID del producto incluido en este detalle
+    cantidad              SMALLINT NOT NULL,                          -- Cantidad del producto
+    precio_unitario       DECIMAL(15, 2) NOT NULL,                    -- Precio del producto al momento de la facturación
+    subtotal_linea        DECIMAL(15, 2) NOT NULL,                    -- Subtotal para esta línea
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_detalle_factura),                                 -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (id_factura, id_producto),                                 -- Un producto solo puede aparecer una vez por factura
+    FOREIGN KEY (id_factura) REFERENCES tab_Facturas(id_factura),     -- Relación con la tabla de Facturas
+    FOREIGN KEY (id_producto) REFERENCES tab_Productos(id_producto),    -- Relación con la tabla de Productos
+    CHECK (cantidad > 0)                                              -- Cantidad del producto
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL
+
+-- ===================================================================
+-- SECCIÓN DE ÍNDICES Y RESTRICCIONES POST-CREACIÓN
+-- ===================================================================
+CREATE INDEX idx_detalle_factura_factura ON tab_Detalle_Factura (id_factura);    -- Construye un índice en el motor para acelerar lecturas en la columna
+CREATE INDEX idx_detalle_factura_producto ON tab_Detalle_Factura (id_producto);    -- Construye un índice en el motor para acelerar lecturas en la columna`,
+            'tab_Envios': `CREATE TABLE IF NOT EXISTS tab_Envios                                 -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_envio                BIGINT NOT NULL,                          -- Identificador único del envío
+    id_orden                BIGINT NOT NULL,                          -- Clave foránea a tab_Orden, una orden tiene un único envío
+    id_direccion_envio      BIGINT NOT NULL,                          -- Clave foránea a tab_Direcciones_Envio
+    metodo_envio            VARCHAR(100) NOT NULL,                    -- Método de envío utilizado
+    estado_envio            VARCHAR(50) NOT NULL,                     -- Estado actual del envío
+    fecha_envio             TIMESTAMP NOT NULL,                       -- Fecha y hora en que se realizó el envío
+    fecha_entrega_estimada  TIMESTAMP NOT NULL,                       -- Fecha y hora estimada de entrega
+    costo_envio             DECIMAL(15, 2) NOT NULL,                  -- Costo del envío
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_envio),                                           -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (id_orden),                                                -- Una orden tiene un único envío
+    FOREIGN KEY (id_orden) REFERENCES tab_Orden (id_orden),           -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_direccion_envio) REFERENCES tab_Direcciones_Envio(id_direccion),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    CHECK (fecha_entrega_estimada >= fecha_envio),                    -- Asegura que la fecha estimada no sea anterior a la de envío
+    CHECK (costo_envio >= 0),                                         -- Costo del envío
+    CHECK (estado_envio IN ('pendiente', 'en tránsito', 'entregado', 'cancelado'))    -- Estado actual del envío
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Opiniones': `CREATE TABLE IF NOT EXISTS tab_Opiniones                              -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_opinion              SERIAL PRIMARY KEY,                       -- Identificador único de la opinión (SERIAL para autoincremento)
+    id_usuario              BIGINT NOT NULL,                          -- Identificador del usuario que realizó la opinión
+    id_producto             BIGINT  NULL,                             -- Identificador del producto sobre el que se realizó la opinión
+    calificacion            SMALLINT NOT NULL,                        -- Calificación del producto (1 a 5 estrellas)
+    comentario              TEXT NOT NULL,                            -- Comentario adicional sobre el producto
+    fecha_opinion           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,      -- Fecha y hora en que se realizó la opinión
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    --PRIMARY KEY (id_opinion),                                       -- Ya definida en la línea 541
+    FOREIGN KEY (id_usuario) REFERENCES tab_Usuarios (id_usuario),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_producto) REFERENCES tab_Productos (id_producto),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    CHECK (calificacion BETWEEN 1 AND 5)                              -- Calificación del producto (1 a 5 estrellas)
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Pagos': `CREATE TABLE IF NOT EXISTS tab_Pagos                                  -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_pago                 BIGINT NOT NULL,                          -- Identificador único del pago
+    id_orden                BIGINT NOT NULL,                          -- Clave foránea a tab_Orden, una orden tiene un único pago
+    monto                   DECIMAL(15, 2) NOT NULL,                  -- Monto del pago
+    id_metodo_pago          SMALLINT NOT NULL,                        -- Clave foránea a tab_Metodos_Pago
+    estado_pago             VARCHAR(50) NOT NULL,                     -- Estado actual del pago
+    fecha_pago              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,      -- Fecha y hora en que se realizó el pago
+    comprobante_archivo     BYTEA,                                    -- Contenido binario del comprobante
+    comprobante_extension   VARCHAR(10),                              -- Extensión del archivo (jpg, png, pdf, etc.)
+       -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_pago),                                            -- Llave primaria única y elemento central de identificación relacional
+    FOREIGN KEY (id_orden) REFERENCES tab_Orden(id_orden),            -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_metodo_pago) REFERENCES tab_Metodos_Pago(id_metodo_pago),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    CHECK (monto >= 0),                                               -- Monto del pago
+    CHECK (monto >= 0),                                               -- Monto del pago
+    CHECK (estado_pago IN ('pendiente', 'completado', 'fallido', 'reembolsado'))    -- Estado actual del pago
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Productos_Promociones': `CREATE TABLE IF NOT EXISTS tab_Productos_Promociones                  -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_producto_promocion   BIGINT NOT NULL,                          -- Identificador único de la relación producto-promoción
+    id_producto             BIGINT NOT NULL,                          -- Identificador del producto asociado a la promoción
+    id_promocion            INT NOT NULL,                             -- Identificador de la promoción aplicada al producto
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_producto_promocion),                              -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (id_producto, id_promocion),                               -- Asegura que un producto no tenga la misma promoción aplicada varias veces
+    FOREIGN KEY (id_producto) REFERENCES tab_Productos(id_producto),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_promocion) REFERENCES tab_Promociones(id_promocion)    -- Restricción de clave foránea que vincula a otra entidad maestra
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Reservas': `CREATE TABLE IF NOT EXISTS tab_Reservas                               -- Define la estructura y esquema físico de la nueva tabla de entidad
+(                                                                     -- Apertura de declaración formal de los campos y restricciones
+    id_reserva              BIGINT NOT NULL,                          -- Identificador único de la reserva
+    id_usuario              BIGINT NOT NULL,                          -- Identificador del usuario que realizó la reserva
+    id_servicio             BIGINT NOT NULL,                          -- Identificador del servicio reservado
+    fecha_reserva           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,    -- Fecha real de creación
+    fecha_preferida         DATE,                                     -- (NUEVO) Fecha en la que el cliente desea el servicio
+    notas_cliente           TEXT,                                     -- (NUEVO) Notas adicionales del cliente
+    prioridad               VARCHAR(20) DEFAULT 'normal',             -- (NUEVO) Prioridad (normal, alta)
+    estado_reserva          VARCHAR(50) DEFAULT 'pendiente',          -- Estado (pendiente, confirmada, etc.)
+    -- Columnas de auditoría
+    usr_insert VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete VARCHAR(100),                                          -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete TIMESTAMP,                                             -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_reserva),                                         -- Llave primaria única y elemento central de identificación relacional
+    FOREIGN KEY (id_usuario) REFERENCES tab_Usuarios(id_usuario),     -- Restricción de clave foránea que vincula a otra entidad maestra
+    FOREIGN KEY (id_servicio) REFERENCES tab_Servicios(id_servicio),    -- Restricción de clave foránea que vincula a otra entidad maestra
+    CHECK (estado_reserva IN ('pendiente', 'confirmada', 'cancelada', 'completada'))    -- Restricción de verificación de dominio para control de calidad
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Empleados': `CREATE TABLE IF NOT EXISTS tab_Empleados (                            -- Define la estructura y esquema físico de la nueva tabla de entidad
+    id_empleado          BIGINT NOT NULL,                             -- Atributo de tipo entero/numérico para cálculos o identificadores
+    num_documento        VARCHAR(20),                                 -- Columna estándar destinada a almacenar cadenas de caracteres
+    nom_empleado         VARCHAR(100) NOT NULL,                       -- Atributo de texto alfanumérico estrictamente obligatorio
+    apellido_empleado    VARCHAR(100) NOT NULL,                       -- Atributo de texto alfanumérico estrictamente obligatorio
+    correo               VARCHAR(100),                                -- Columna estándar destinada a almacenar cadenas de caracteres
+    telefono             VARCHAR(20),                                 -- Columna estándar destinada a almacenar cadenas de caracteres
+    puesto               VARCHAR(100),                                -- Columna estándar destinada a almacenar cadenas de caracteres
+    fecha_contratacion   DATE DEFAULT CURRENT_DATE,                   -- Registro de instante temporal estricto (fecha y/o hora)
+    -- Columnas de auditoría
+    usr_insert           VARCHAR(100),                                -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert           TIMESTAMP,                                   -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update           VARCHAR(100),                                -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update           TIMESTAMP,                                   -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete           VARCHAR(100),                                -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete           TIMESTAMP,                                   -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_empleado),                                        -- Llave primaria única y elemento central de identificación relacional
+    UNIQUE (num_documento),                                           -- Regla de negocio indexada que fuerza la exclusividad del registro
+    UNIQUE (correo)                                                   -- Regla de negocio indexada que fuerza la exclusividad del registro
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Eventos': `CREATE TABLE IF NOT EXISTS tab_Eventos (                              -- Define la estructura y esquema físico de la nueva tabla de entidad
+    id_evento            BIGINT NOT NULL,                             -- Atributo de tipo entero/numérico para cálculos o identificadores
+    titulo               VARCHAR(200) NOT NULL,                       -- Atributo de texto alfanumérico estrictamente obligatorio
+    descripcion          TEXT,                                        -- Columna estándar destinada a almacenar cadenas de caracteres
+    fecha_inicio         TIMESTAMP NOT NULL,                          -- Registro de instante temporal estricto (fecha y/o hora)
+    fecha_fin            TIMESTAMP NOT NULL,                          -- Registro de instante temporal estricto (fecha y/o hora)
+    -- Columnas de auditoría
+    usr_insert           VARCHAR(100),                                -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert           TIMESTAMP,                                   -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_update           VARCHAR(100),                                -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_update           TIMESTAMP,                                   -- Registro de instante temporal estricto (fecha y/o hora)
+    usr_delete           VARCHAR(100),                                -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_delete           TIMESTAMP,                                   -- Registro de instante temporal estricto (fecha y/o hora)
+    PRIMARY KEY (id_evento),                                          -- Llave primaria única y elemento central de identificación relacional
+    CHECK (fecha_fin >= fecha_inicio)                                 -- Restricción de verificación de dominio para control de calidad
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`,
+            'tab_Rate_Limits': `CREATE TABLE IF NOT EXISTS tab_Rate_Limits (                          -- Define la estructura y esquema físico de la nueva tabla de entidad
+    id_rate_limit   SERIAL PRIMARY KEY,                               -- Llave primaria única y elemento central de identificación relacional
+    nom_accion      VARCHAR(50) NOT NULL,                             -- Nombre de la acción (ej: 'login', 'signup')
+    identificador   VARCHAR(100) NOT NULL,                            -- Identificador único (IP o ID de usuario)
+    fec_intento     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,     -- Campo numérico inicializado automáticamente con valor por defecto
+    -- Auditoría (Siguiendo el estándar del proyecto)
+    usr_insert      VARCHAR(100) DEFAULT CURRENT_USER,                -- Columna estándar destinada a almacenar cadenas de caracteres
+    fec_insert      TIMESTAMP DEFAULT CURRENT_TIMESTAMP               -- Marca de tiempo automática inyectada nativamente por el DBMS
+);                                                                    -- Cierre y consolidación de la instrucción DDL en PostgreSQL`
+        };
+
+        const modules = {
+            'm_usuarios': {
+                'id': 'gestión_de_usuarios.sql',
+                'title': 'Gestión de Usuarios',
+                'fase': 'Módulo Base',
+                'desc_short': 'Tablas relacionadas con usuarios, roles, empleados y log.',
+                'stats': {'functions': 2, 'lines': 0, 'tables': 2, 'php': 0},
+                'functions': [
+                    {'id': 'tab_Usuarios', 'name': 'tab_Usuarios', 'type': 'TABLE', 'desc': 'Almacena la información de los usuarios del sistema.', 'php': 'N/A'},
+                    {'id': 'tab_Empleados', 'name': 'tab_Empleados', 'type': 'TABLE', 'desc': 'Almacena la información de los empleados de la empresa.', 'php': 'N/A'},
+                ]
+            },
+            'm_catalogo': {
+                'id': 'catálogo_y_productos.sql',
+                'title': 'Catálogo y Productos',
+                'fase': 'Módulo Base',
+                'desc_short': 'Categorías, subcategorías, marcas, servicios y el catálogo.',
+                'stats': {'functions': 7, 'lines': 0, 'tables': 7, 'php': 0},
+                'functions': [
+                    {'id': 'tab_Categorias', 'name': 'tab_Categorias', 'type': 'TABLE', 'desc': 'Almacena las categorías de los productos (ej. "Relojes de Pulsera", "Relojes de Bolsillo").', 'php': 'N/A'},
+                    {'id': 'tab_Subcategorias', 'name': 'tab_Subcategorias', 'type': 'TABLE', 'desc': 'Almacena las subcategorías de los productos, vinculadas a una categoría principal.', 'php': 'N/A'},
+                    {'id': 'tab_Marcas', 'name': 'tab_Marcas', 'type': 'TABLE', 'desc': 'Almacena las marcas de los productos.', 'php': 'N/A'},
+                    {'id': 'tab_Servicios', 'name': 'tab_Servicios', 'type': 'TABLE', 'desc': 'Almacena los servicios ofrecidos (ej. "Mantenimiento", "Reparación").', 'php': 'N/A'},
+                    {'id': 'tab_Productos', 'name': 'tab_Productos', 'type': 'TABLE', 'desc': 'Almacena la información de los productos (relojes, accesorios, etc.).', 'php': 'N/A'},
+                    {'id': 'tab_Orden_Servicios', 'name': 'tab_Orden_Servicios', 'type': 'TABLE', 'desc': 'Almacena los servicios individuales comprados como parte de una orden.', 'php': 'N/A'},
+                    {'id': 'tab_Productos_Promociones', 'name': 'tab_Productos_Promociones', 'type': 'TABLE', 'desc': 'Tabla de relación muchos a muchos entre productos y promociones.', 'php': 'N/A'},
+                ]
+            },
+            'm_geografia': {
+                'id': 'ubicación_y_envíos.sql',
+                'title': 'Ubicación y Envíos',
+                'fase': 'Módulo Base',
+                'desc_short': 'Departamentos, ciudades y direcciones de envío.',
+                'stats': {'functions': 3, 'lines': 0, 'tables': 3, 'php': 0},
+                'functions': [
+                    {'id': 'tab_Departamentos', 'name': 'tab_Departamentos', 'type': 'TABLE', 'desc': 'Almacena la información de los departamentos/estados/provincias.', 'php': 'N/A'},
+                    {'id': 'tab_Ciudades', 'name': 'tab_Ciudades', 'type': 'TABLE', 'desc': 'Almacena la información de ciudades.', 'php': 'N/A'},
+                    {'id': 'tab_Direcciones_Envio', 'name': 'tab_Direcciones_Envio', 'type': 'TABLE', 'desc': 'Almacena múltiples direcciones de envío para cada usuario.', 'php': 'N/A'},
+                ]
+            },
+            'm_comercio': {
+                'id': 'comercial_y_transaccional.sql',
+                'title': 'Comercial y Transaccional',
+                'fase': 'Módulo Core',
+                'desc_short': 'Métodos de pago, promociones, reseñas, órdenes y envíos.',
+                'stats': {'functions': 12, 'lines': 0, 'tables': 12, 'php': 0},
+                'functions': [
+                    {'id': 'tab_Metodos_Pago', 'name': 'tab_Metodos_Pago', 'type': 'TABLE', 'desc': 'Almacena los métodos de pago disponibles en el sistema.', 'php': 'N/A'},
+                    {'id': 'tab_Promociones', 'name': 'tab_Promociones', 'type': 'TABLE', 'desc': 'Almacena las promociones disponibles.', 'php': 'N/A'},
+                    {'id': 'tab_Carrito', 'name': 'tab_Carrito', 'type': 'TABLE', 'desc': 'Almacena la cabecera de los carritos de compra de los usuarios.', 'php': 'N/A'},
+                    {'id': 'tab_Carrito_Detalle', 'name': 'tab_Carrito_Detalle', 'type': 'TABLE', 'desc': 'Almacena los productos individuales dentro de cada carrito de compra.', 'php': 'N/A'},
+                    {'id': 'tab_Orden', 'name': 'tab_Orden', 'type': 'TABLE', 'desc': 'Almacena la cabecera de las órdenes de compra.', 'php': 'N/A'},
+                    {'id': 'tab_Detalle_Orden', 'name': 'tab_Detalle_Orden', 'type': 'TABLE', 'desc': 'Almacena los productos individuales dentro de cada orden.', 'php': 'N/A'},
+                    {'id': 'tab_Facturas', 'name': 'tab_Facturas', 'type': 'TABLE', 'desc': 'Almacena la información principal de cada factura generada por una orden.', 'php': 'N/A'},
+                    {'id': 'tab_Detalle_Factura', 'name': 'tab_Detalle_Factura', 'type': 'TABLE', 'desc': 'Contiene los ítems individuales de cada factura.', 'php': 'N/A'},
+                    {'id': 'tab_Envios', 'name': 'tab_Envios', 'type': 'TABLE', 'desc': 'Almacena la información de los envíos asociados a las órdenes.', 'php': 'N/A'},
+                    {'id': 'tab_Opiniones', 'name': 'tab_Opiniones', 'type': 'TABLE', 'desc': 'Almacena las calificaciones y reseñas de los usuarios sobre los productos.', 'php': 'N/A'},
+                    {'id': 'tab_Pagos', 'name': 'tab_Pagos', 'type': 'TABLE', 'desc': 'Almacena los registros de pagos de las órdenes.', 'php': 'N/A'},
+                    {'id': 'tab_Reservas', 'name': 'tab_Reservas', 'type': 'TABLE', 'desc': 'Almacena las reservas de servicios realizadas por los usuarios.', 'php': 'N/A'},
+                ]
+            },
+            'm_otros': {
+                'id': 'utilitarios.sql',
+                'title': 'Utilitarios',
+                'fase': 'Módulo Secundario',
+                'desc_short': 'Contacto, historial, eventos y reservaciones.',
+                'stats': {'functions': 3, 'lines': 0, 'tables': 3, 'php': 0},
+                'functions': [
+                    {'id': 'tab_Contacto', 'name': 'tab_Contacto', 'type': 'TABLE', 'desc': 'Almacena los mensajes de contacto enviados por los usuarios.', 'php': 'N/A'},
+                    {'id': 'tab_Eventos', 'name': 'tab_Eventos', 'type': 'TABLE', 'desc': 'Almacena eventos, promociones especiales o hitos del negocio.', 'php': 'N/A'},
+                    {'id': 'tab_Rate_Limits', 'name': 'tab_Rate_Limits', 'type': 'TABLE', 'desc': 'Almacena los intentos de acciones para control de tasa (Rate Limiting). Esto previene ataques de fuerza bruta y denegaci...', 'php': 'N/A'},
+                ]
+            },
+        };
+
+        function init() {
+            const list = document.getElementById('module-list');
+            Object.entries(modules).forEach(([id, data]) => {
+                const card = document.createElement('div');
+                card.className = 'module-card';
+                card.id = `card-${id}`;
+                card.innerHTML = `
+                    <div class="module-title">${data.id}</div>
+                    <div class="module-subtitle" style="margin-bottom: 6px;">${data.title} &middot; ${data.fase}</div>
+                    <div style="font-size: 0.65rem; color: var(--text-dim); line-height: 1.4;">${data.desc_short}</div>
+                `;
+                card.onclick = () => selectModule(id);
+                list.appendChild(card);
+            });
+
+            document.getElementById('global-search').addEventListener('input', handleSearch);
+        }
+
+        function selectModule(id) {
+            const data = modules[id];
+            const detailArea = document.getElementById('detail-area');
+
+            document.querySelectorAll('.module-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`card-${id}`).classList.add('active');
+
+            detailArea.innerHTML = `
+                <div class="fade-in">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+                        <div>
+                            <h2 style="font-size: 1.5rem; margin-bottom: 0.3rem;">${data.id}</h2>
+                            <p style="color: var(--text-dim); font-size: 0.9rem;">${data.title} — Lógica de Negocio Encápsulada</p>
+                        </div>
+                        <div class="tag tag-atomic" style="padding: 0.5rem 1rem;">${data.fase}</div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-value">${data.stats.functions}</div><div class="stat-label">Funciones</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.stats.lines}</div><div class="stat-label">Líneas SQL</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.stats.tables}</div><div class="stat-label">Tablas Rel.</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.stats.php}</div><div class="stat-label">Archivos PHP</div></div>
+                    </div>
+
+                    <h3 style="margin: 2rem 0 1rem; font-size: 1rem; border-left: 3px solid var(--accent-color); padding-left: 10px;">Funciones Disponibles para Inspección</h3>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Función (Clic para ver código)</th>
+                                    <th>Tipo</th>
+                                    <th>Resumen</th>
+                                    <th>Endpoint PHP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.functions.map(f => `
+                                    <tr onclick="loadCode('${f.id}', '${data.id}')">
+                                        <td><code-inline>${f.name}</code-inline></td>
+                                        <td><span class="tag tag-${f.type.toLowerCase().split('/')[0].replace('+', '')}">${f.type}</span></td>
+                                        <td style="font-size: 0.75rem;">${f.desc}</td>
+                                        <td><span class="php-badge">${f.php}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        function highlightSQL(code) {
+            if (!code) return '';
+
+            // Escape HTML first
+            code = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Strings
+            code = code.replace(/('(?:[^'\\]|\\.)*')/g, '<span class="string">$1</span>');
+
+            // Comments
+            code = code.replace(/(--.*?)$/gm, '<span class="comment">$1</span>');
+            code = code.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="comment">$1</span>');
+
+            // Keywords
+            const keywords = ['CREATE', 'OR', 'REPLACE', 'FUNCTION', 'RETURNS', 'TABLE', 'AS', 'DECLARE', 'BEGIN', 'END', 'IF', 'THEN', 'ELSE', 'ELSIF', 'WHILE', 'LOOP', 'FOR', 'IN', 'RETURN', 'QUERY', 'SELECT', 'FROM', 'WHERE', 'AND', 'JOIN', 'LEFT', 'ON', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'COALESCE', 'COUNT', 'SUM', 'IS', 'NULL', 'TRUE', 'FALSE', 'LIMIT', 'EXISTS', 'NOT', 'DEFAULT', 'EXCEPTION', 'WHEN', 'OTHERS', 'ROW_TO_JSON', 'JSON_BUILD_OBJECT', 'JSON_AGG', 'EXTRACT', 'EPOCH', 'NOW', 'ROUND'];
+            const typeWords = ['TEXT', 'BIGINT', 'INTEGER', 'NUMERIC', 'JSON', 'VARCHAR', 'BOOLEAN', 'TIMESTAMP', 'BYTEA', 'RECORD', 'VOID', 'DATE', 'TIME', 'INTERVAL'];
+
+            const kwRegex = new RegExp('\\b(' + keywords.join('|') + ')\\b', 'gi');
+            code = code.replace(kwRegex, '<span class="keyword">$1</span>');
+
+            const tyRegex = new RegExp('\\b(' + typeWords.join('|') + ')\\b', 'gi');
+            code = code.replace(tyRegex, '<span class="type">$1</span>');
+
+            // Function calls
+            code = code.replace(/ ([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g, ' <span class="function">$1</span>');
+
+            return code;
+        }
+
+        function loadCode(fnId, moduleId) {
+            const display = document.getElementById('code-display');
+            const filenameTarget = document.getElementById('code-filename');
+            const statsTarget = document.getElementById('code-stats');
+
+            filenameTarget.innerText = `${moduleId} > ${fnId}()`;
+            statsTarget.innerText = 'Definición de Tabla (DDL)';
+
+            if (functionCode[fnId]) {
+                display.innerHTML = highlightSQL(functionCode[fnId]);
+                document.getElementById('code-area').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                display.innerHTML = `<span class="comment">-- El código para ${fnId} está disponible en el archivo físico ${moduleId}.
+-- Esta versión del dashboard incluye las funciones clave; 
+-- para más detalles consulte el código fuente adjunto.</span>`;
+            }
+
+            display.classList.remove('fade-in');
+            void display.offsetWidth; // Trigger reflow
+            display.classList.add('fade-in');
+        }
+
+        function handleSearch(e) {
+            const term = e.target.value.toLowerCase();
+            if (term === "") return;
+
+            const results = [];
+            Object.entries(modules).forEach(([modId, modData]) => {
+                modData.functions.forEach(f => {
+                    if (f.name.toLowerCase().includes(term) || f.desc.toLowerCase().includes(term) || f.php.toLowerCase().includes(term)) {
+                        results.push({ ...f, mod: modData.id });
+                    }
+                });
+            });
+
+            renderSearchResults(results, term);
+        }
+
+        function renderSearchResults(results, term) {
+            const detailArea = document.getElementById('detail-area');
+            if (results.length === 0) {
+                detailArea.innerHTML = `<div class="empty-state">No se encontraron funciones para "${term}"</div>`;
+                return;
+            }
+
+            detailArea.innerHTML = `
+                <div class="fade-in">
+                    <h2 style="margin-bottom: 1.5rem; font-size: 1.3rem;">Resultados para: "${term}"</h2>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Módulo</th>
+                                    <th>Función</th>
+                                    <th>Tipo</th>
+                                    <th>Propósito</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${results.map(r => `
+                                    <tr onclick="loadCode('${r.id}', '${r.mod}')">
+                                        <td style="font-size: 0.7rem; opacity: 0.6;">${r.mod}</td>
+                                        <td><code-inline>${r.name}</code-inline></td>
+                                        <td><span class="tag tag-${r.type.toLowerCase().split('/')[0].replace('+', '')}">${r.type}</span></td>
+                                        <td style="font-size: 0.75rem;">${r.desc}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+
+</html>
