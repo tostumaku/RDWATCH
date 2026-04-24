@@ -67,16 +67,16 @@ CREATE OR REPLACE FUNCTION fn_stats_dashboard()
 RETURNS JSON
 AS $$
 DECLARE
-    v_productos   INTEGER; -- Conteo de SKUs activos
-    v_pedidos     INTEGER; -- Volumen histórico de transacciones
-    v_clientes    INTEGER; -- Masa crítica de usuarios registrados
-    v_servicios   INTEGER; -- Amplitud del catálogo de taller
-    v_ventas_monto NUMERIC; -- Monetización bruta (Órdenes enviadas)
-    v_ventas_cant  INTEGER; -- Cantidad de despachos exitosos
-    v_reparados   INTEGER; -- Único: Conteo de servicios finalizados
-    v_satisfaccion INTEGER; -- Indexación de felicidad del cliente
-    v_total_reviews INTEGER; -- Total de feedbacks recibidos
-    v_satisfied   INTEGER; -- Feedback positivo (Estrellas >= 3)
+    v_productos   INTEGER; -- Conteo de SKUs activos (COUNT genérico)
+    v_pedidos     INTEGER; -- Volumen histórico de transacciones (COUNT genérico)
+    v_clientes    INTEGER; -- Masa crítica de usuarios registrados (COUNT genérico)
+    v_servicios   INTEGER; -- Amplitud del catálogo de taller (COUNT genérico)
+    v_ventas_monto tab_Orden.total_orden%TYPE; -- Monetización bruta (Órdenes enviadas)
+    v_ventas_cant  INTEGER; -- Cantidad de despachos exitosos (COUNT genérico)
+    v_reparados   INTEGER; -- Único: Conteo de servicios finalizados (COUNT genérico)
+    v_satisfaccion INTEGER; -- Indexación de felicidad del cliente (porcentaje calculado)
+    v_total_reviews INTEGER; -- Total de feedbacks recibidos (COUNT genérico)
+    v_satisfied   INTEGER; -- Feedback positivo (Estrellas >= 3) (COUNT genérico)
 BEGIN
     -- KPI 1-4: Censos de inventario, tráfico, audiencia y servicios.
     SELECT COUNT(p.id_producto) INTO v_productos FROM tab_Productos p;
@@ -189,8 +189,8 @@ $$ LANGUAGE plpgsql STABLE;
 DROP FUNCTION IF EXISTS fn_invoice_get_header(BIGINT, BIGINT);
 DROP FUNCTION IF EXISTS fn_invoice_get_header(INTEGER, INTEGER);
 CREATE OR REPLACE FUNCTION fn_invoice_get_header(
-    p_order_id INTEGER, -- Nodo de la transacción
-    p_user_id  INTEGER  -- Validador de propiedad (Anti-IDOR)
+    p_order_id tab_Orden.id_orden%TYPE, -- Nodo de la transacción
+    p_user_id  tab_Usuarios.id_usuario%TYPE  -- Validador de propiedad (Anti-IDOR)
 )
 RETURNS JSON
 AS $$
@@ -242,7 +242,7 @@ $$ LANGUAGE plpgsql STABLE;
 DROP FUNCTION IF EXISTS fn_invoice_get_items(BIGINT);
 DROP FUNCTION IF EXISTS fn_invoice_get_items(INTEGER);
 CREATE OR REPLACE FUNCTION fn_invoice_get_items(
-    p_order_id INTEGER -- Puntero a la transacción madre
+    p_order_id tab_Orden.id_orden%TYPE -- Puntero a la transacción madre
 )
 RETURNS JSON
 AS $$
@@ -290,7 +290,7 @@ DROP FUNCTION IF EXISTS fn_receipt_get_binary(INTEGER);
 DROP FUNCTION IF EXISTS fn_receipt_get_path(BIGINT);
 DROP FUNCTION IF EXISTS fn_receipt_get_path(INTEGER);
 CREATE OR REPLACE FUNCTION fn_receipt_get_path(
-    p_order_id INTEGER
+    p_order_id tab_Orden.id_orden%TYPE
 )
 RETURNS TEXT
 AS $$

@@ -85,12 +85,12 @@
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cart_get_or_create(
-    p_user_id INTEGER  -- ID único del usuario autenticado
+    p_user_id tab_Usuarios.id_usuario%TYPE  -- ID único del usuario autenticado
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_cart_id INTEGER;   -- Variable de captura de ID
+    v_cart_id tab_Carrito.id_carrito%TYPE;   -- Variable de captura de ID
     v_created BOOLEAN := FALSE; -- Flag de creación
 BEGIN
     -- PASO 1: Consulta de estado actual.
@@ -151,7 +151,7 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cart_get_items(
-    p_cart_id INTEGER  -- Localizador único del carrito
+    p_cart_id tab_Carrito.id_carrito%TYPE  -- Localizador único del carrito
 )
 RETURNS JSON
 AS $$
@@ -200,15 +200,15 @@ $$ LANGUAGE plpgsql STABLE; -- Función estable optimizada para lectura
 DROP FUNCTION IF EXISTS fn_cart_add_item(bigint, bigint, integer);
 DROP FUNCTION IF EXISTS fn_cart_add_item(integer, integer, integer);
 CREATE OR REPLACE FUNCTION fn_cart_add_item(
-    p_cart_id  INTEGER,   -- Relación con tab_Carrito
-    p_prod_id  INTEGER,   -- Relación con tab_Productos
-    p_qty      INTEGER   -- Unidades a incorporar
+    p_cart_id  tab_Carrito.id_carrito%TYPE,   -- Relación con tab_Carrito
+    p_prod_id  tab_Productos.id_producto%TYPE,   -- Relación con tab_Productos
+    p_qty      tab_Carrito_Detalle.cantidad%TYPE   -- Unidades a incorporar
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_existing INTEGER;  -- Buffer para cantidad previa
-    v_det_id   INTEGER;   -- Generación de PK para detalle
+    v_existing tab_Carrito_Detalle.cantidad%TYPE;  -- Buffer para cantidad previa
+    v_det_id   tab_Carrito_Detalle.id_carrito_detalle%TYPE;   -- Generación de PK para detalle
 BEGIN
     -- VERIFICACIÓN: ¿Existe el solapamiento en el carrito?
     SELECT d.cantidad INTO v_existing
@@ -265,9 +265,9 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS fn_cart_update_qty(bigint, bigint, integer);
 DROP FUNCTION IF EXISTS fn_cart_update_qty(integer, integer, integer);
 CREATE OR REPLACE FUNCTION fn_cart_update_qty(
-    p_cart_id INTEGER,  -- Referencia al carrito activo
-    p_prod_id INTEGER,  -- Referencia al producto
-    p_qty     INTEGER  -- Nueva cantidad absoluta
+    p_cart_id tab_Carrito.id_carrito%TYPE,  -- Referencia al carrito activo
+    p_prod_id tab_Productos.id_producto%TYPE,  -- Referencia al producto
+    p_qty     tab_Carrito_Detalle.cantidad%TYPE  -- Nueva cantidad absoluta
 )
 RETURNS JSON
 AS $$
@@ -300,8 +300,8 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS fn_cart_remove_item(bigint, bigint);
 DROP FUNCTION IF EXISTS fn_cart_remove_item(integer, integer);
 CREATE OR REPLACE FUNCTION fn_cart_remove_item(
-    p_cart_id INTEGER, -- Localizador de la sesión
-    p_prod_id INTEGER  -- ID del producto a retirar
+    p_cart_id tab_Carrito.id_carrito%TYPE, -- Localizador de la sesión
+    p_prod_id tab_Productos.id_producto%TYPE  -- ID del producto a retirar
 )
 RETURNS JSON
 AS $$
@@ -332,7 +332,7 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS fn_cart_clear(bigint);
 DROP FUNCTION IF EXISTS fn_cart_clear(integer);
 CREATE OR REPLACE FUNCTION fn_cart_clear(
-    p_cart_id INTEGER -- ID del carrito a vaciar
+    p_cart_id tab_Carrito.id_carrito%TYPE -- ID del carrito a vaciar
 )
 RETURNS JSON
 AS $$
@@ -399,26 +399,26 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS fn_checkout_process(integer, text, text, text);
 DROP FUNCTION IF EXISTS fn_checkout_process(bigint, text, text, text);
 CREATE OR REPLACE FUNCTION fn_checkout_process(
-    p_user_id    INTEGER,   -- ID del comprador
-    p_direccion  TEXT,     -- Domicilio de destino
-    p_ciudad     TEXT,     -- Ciudad para logística local
-    p_metodo     TEXT      -- Referencia al medio de pago
+    p_user_id    tab_Usuarios.id_usuario%TYPE,   -- ID del comprador
+    p_direccion  tab_Direcciones_Envio.direccion_completa%TYPE,     -- Domicilio de destino
+    p_ciudad     tab_Ciudades.nombre_ciudad%TYPE,     -- Ciudad para logística local
+    p_metodo     tab_Metodos_Pago.nombre_metodo%TYPE      -- Referencia al medio de pago
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_cart_id     INTEGER;     -- Localizador del carrito
-    v_order_id    INTEGER;     -- PK de la nueva Orden
-    v_invoice_id  INTEGER;     -- PK de la nueva Factura
-    v_shipping_id INTEGER;     -- PK del proceso de Envío
-    v_payment_id  INTEGER;     -- PK del registro de Pago
-    v_addr_id     INTEGER;     -- ID de dirección (nueva o existente)
-    v_city_id     INTEGER;    -- ID de mapeo de ciudad
-    v_total       NUMERIC := 0; -- Acumulador de precio final
-    v_concepto    TEXT;       -- Glosa descriptiva
+    v_cart_id     tab_Carrito.id_carrito%TYPE;     -- Localizador del carrito
+    v_order_id    tab_Orden.id_orden%TYPE;     -- PK de la nueva Orden
+    v_invoice_id  tab_Facturas.id_factura%TYPE;     -- PK de la nueva Factura
+    v_shipping_id tab_Envios.id_envio%TYPE;     -- PK del proceso de Envío
+    v_payment_id  tab_Pagos.id_pago%TYPE;     -- PK del registro de Pago
+    v_addr_id     tab_Direcciones_Envio.id_direccion%TYPE;     -- ID de dirección (nueva o existente)
+    v_city_id     tab_Ciudades.id_ciudad%TYPE;    -- ID de mapeo de ciudad
+    v_total       tab_Orden.total_orden%TYPE := 0; -- Acumulador de precio final
+    v_concepto    tab_Orden.concepto%TYPE;       -- Glosa descriptiva
     v_item        RECORD;     -- Cursor de ítems del carrito
     v_idx         INTEGER := 0; -- Iterador de líneas detalle
-    v_subtotal    NUMERIC;    -- Cálculo temporal por línea
+    v_subtotal    tab_Detalle_Factura.subtotal_linea%TYPE;    -- Cálculo temporal por línea
 BEGIN
     -- PASO 1: Localización del recurso base.
     SELECT c.id_carrito INTO v_cart_id
@@ -613,7 +613,7 @@ $$ LANGUAGE plpgsql;
 -- ║  rango de fechas de forma independiente.                 ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_orders_list(
-    p_estado     TEXT DEFAULT NULL,   -- Filtro por estado logístico
+    p_estado     tab_Orden.estado_orden%TYPE DEFAULT NULL,   -- Filtro por estado logístico
     p_busqueda   TEXT DEFAULT NULL,   -- Búsqueda por cliente/correo
     p_date_from  TEXT DEFAULT NULL,   -- Límite inferior temporal
     p_date_to    TEXT DEFAULT NULL    -- Límite superior temporal
@@ -674,8 +674,8 @@ $$ LANGUAGE plpgsql STABLE;
 DROP FUNCTION IF EXISTS fn_orders_update_status(bigint, text);
 DROP FUNCTION IF EXISTS fn_orders_update_status(integer, text);
 CREATE OR REPLACE FUNCTION fn_orders_update_status(
-    p_order_id   INTEGER,   -- ID de la orden objeto del cambio
-    p_new_status TEXT      -- Etiqueta del nuevo estado
+    p_order_id   tab_Orden.id_orden%TYPE,   -- ID de la orden objeto del cambio
+    p_new_status tab_Orden.estado_orden%TYPE      -- Etiqueta del nuevo estado
 )
 RETURNS JSON
 AS $$
@@ -777,7 +777,7 @@ $$ LANGUAGE plpgsql STABLE;
 DROP FUNCTION IF EXISTS fn_citas_list_cliente(bigint);
 DROP FUNCTION IF EXISTS fn_citas_list_cliente(integer);
 CREATE OR REPLACE FUNCTION fn_citas_list_cliente(
-    p_user_id INTEGER   -- ID del usuario autenticado
+    p_user_id tab_Usuarios.id_usuario%TYPE   -- ID del usuario autenticado
 )
 RETURNS JSON
 AS $$
@@ -828,16 +828,16 @@ $$ LANGUAGE plpgsql STABLE;
 DROP FUNCTION IF EXISTS fn_citas_create(bigint, bigint, date, text, text);
 DROP FUNCTION IF EXISTS fn_citas_create(integer, integer, date, text, text);
 CREATE OR REPLACE FUNCTION fn_citas_create(
-    p_user_id     INTEGER,   -- ID del cliente solicitante
-    p_servicio_id INTEGER,   -- ID del tipo de servicio (catálogo)
-    p_fecha       DATE,     -- Jornada preferida para el taller
-    p_prioridad   TEXT,     -- Escala de urgencia (ej: 'normal')
-    p_notas       TEXT      -- Detalle del fallo o requerimiento
+    p_user_id     tab_Usuarios.id_usuario%TYPE,   -- ID del cliente solicitante
+    p_servicio_id tab_Servicios.id_servicio%TYPE,   -- ID del tipo de servicio (catálogo)
+    p_fecha       tab_Reservas.fecha_preferida%TYPE,     -- Jornada preferida para el taller
+    p_prioridad   tab_Reservas.prioridad%TYPE,     -- Escala de urgencia (ej: 'normal')
+    p_notas       tab_Reservas.notas_cliente%TYPE      -- Detalle del fallo o requerimiento
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_new_id INTEGER; -- Albergue de la nueva identidad
+    v_new_id tab_Reservas.id_reserva%TYPE; -- Albergue de la nueva identidad
 BEGIN
     -- BARRERA DE INTEGRIDAD: Prevención de agendamientos redundantes.
     IF EXISTS (
@@ -905,9 +905,9 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS fn_citas_update_status(bigint, text, text);
 DROP FUNCTION IF EXISTS fn_citas_update_status(integer, text, text);
 CREATE OR REPLACE FUNCTION fn_citas_update_status(
-    p_reserva_id  INTEGER,  -- ID de la reserva a gestionar
-    p_new_status  TEXT,    -- Nuevo estado (confirmada, cancelada, etc)
-    p_admin_id    TEXT     -- Sello del operador actuante
+    p_reserva_id  tab_Reservas.id_reserva%TYPE,  -- ID de la reserva a gestionar
+    p_new_status  tab_Reservas.estado_reserva%TYPE,    -- Nuevo estado (confirmada, cancelada, etc)
+    p_admin_id    tab_Reservas.usr_update%TYPE     -- Sello del operador actuante
 )
 RETURNS JSON
 AS $$
@@ -952,15 +952,15 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 DROP FUNCTION IF EXISTS fn_contacto_public_create(text, text, bigint, text);
 CREATE OR REPLACE FUNCTION fn_contacto_public_create(
-    p_nombre_remitente TEXT,
-    p_correo_remitente TEXT,
-    p_telefono_remitente BIGINT,
-    p_mensaje TEXT
+    p_nombre_remitente tab_Contacto.nombre_remitente%TYPE,
+    p_correo_remitente tab_Contacto.correo_remitente%TYPE,
+    p_telefono_remitente tab_Contacto.telefono_remitente%TYPE,
+    p_mensaje tab_Contacto.mensaje%TYPE
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_new_id INTEGER;
+    v_new_id tab_Contacto.id_contacto%TYPE;
 BEGIN
     -- BARRERA ANTI-SPAM (NATIVA)
     -- Evita que el mismo correo envíe el mismo texto en un lapso muy corto.
