@@ -357,7 +357,7 @@ async function loadProducts() {
                 category: String(p.nom_categoria || 'General'),
                 brand: String(p.nom_marca || 'General'),
                 img: p.url_imagen || 'images/default-watch.png',
-                badge: (p.stock < 5 && p.stock > 0) ? '¡Pocas!' : ''
+                badge: p.stock === 0 ? 'Agotado' : (p.stock < 5 && p.stock > 0 ? '¡Pocas!' : '')
             }));
 
             populateBrandFilter(productsData);
@@ -411,9 +411,9 @@ function renderPaginatedProducts() {
     const pageItems = filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
     productList.innerHTML = pageItems.map(p => `
-        <div class="product-card">
+        <div class="product-card" ${p.stock === 0 ? 'style="opacity: 0.8;"' : ''}>
             <div class="product-image-container">
-                <img src="${p.img}" alt="${p.name}" class="product-image" onerror="this.src='https://via.placeholder.com/250'">
+                <img src="${p.img}" alt="${p.name}" class="product-image" ${p.stock === 0 ? 'style="filter: grayscale(80%);"' : ''} onerror="this.src='https://via.placeholder.com/250'">
                 ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
             </div>
             <div class="product-details">
@@ -519,16 +519,28 @@ function openProductModal(id) {
     if (stockContainer) stockContainer.textContent = 'Stock: ' + product.stock;
 
     const qtyInput = document.getElementById('modal-qty');
-    qtyInput.value = 1; qtyInput.max = product.stock;
-
     const addBtn = document.getElementById('modal-add-btn');
     const newBtn = addBtn.cloneNode(true);
     addBtn.parentNode.replaceChild(newBtn, addBtn);
 
-    newBtn.onclick = () => {
-        addToCart(product.id, parseInt(qtyInput.value));
-        document.getElementById('product-detail-modal').style.display = 'none';
-    };
+    if (product.stock === 0) {
+        qtyInput.value = 0;
+        qtyInput.disabled = true;
+        newBtn.disabled = true;
+        newBtn.innerHTML = '<i class="fas fa-ban"></i> Agotado';
+        newBtn.className = 'button button-secondary';
+    } else {
+        qtyInput.value = 1; 
+        qtyInput.max = product.stock;
+        qtyInput.disabled = false;
+        newBtn.disabled = false;
+        newBtn.innerHTML = '<i class="fas fa-cart-plus"></i> Agregar al Carrito';
+        newBtn.className = 'button button-primary';
+        newBtn.onclick = () => {
+            addToCart(product.id, parseInt(qtyInput.value));
+            document.getElementById('product-detail-modal').style.display = 'none';
+        };
+    }
 
     const modal = document.getElementById('product-detail-modal');
     modal.style.display = 'flex';
