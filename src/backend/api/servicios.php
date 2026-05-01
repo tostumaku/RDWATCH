@@ -56,8 +56,8 @@ try {
         case 'GET':
             $stmt = $pdo->prepare("SELECT fn_cat_get_servicios()");
             $stmt->execute();
-            $servicios = json_decode($stmt->fetchColumn(), true);
-            echo json_encode(['ok' => true, 'servicios' => $servicios]);
+            $json = $stmt->fetchColumn() ?: '[]';
+            echo '{"ok":true,"servicios":' . $json . '}';
             break;
 
         // ══════════════════════════════════════
@@ -83,7 +83,8 @@ try {
 
             $stmt = $pdo->prepare("SELECT fn_cat_create_servicio(?, ?, ?, ?, ?, ?)");
             $stmt->execute([$data['id_servicio'], $data['nom_servicio'], $desc, $data['precio_servicio'], $duracion, $user_id]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         // ══════════════════════════════════════
@@ -95,6 +96,7 @@ try {
 
             $data = getJsonInput();
             if (!isset($data['id_servicio'])) {
+                http_response_code(400);
                 echo json_encode(['ok' => false, 'msg' => 'Error: Se requiere el ID del servicio para actualizar']);
                 exit;
             }
@@ -108,7 +110,8 @@ try {
                 $data['duracion_estimada'],
                 isset($data['estado']) ? (bool)$data['estado'] : true
             ]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         // ══════════════════════════════════════
@@ -128,15 +131,15 @@ try {
             logDebug("SOFT DELETE SERVICE ATTEMPT: ID[" . ($sid ?? 'NULL') . "]");
 
             if (!$sid) {
+                http_response_code(400);
                 echo json_encode(['ok' => false, 'msg' => 'ID de servicio no proporcionado']);
                 exit;
             }
 
-            $stmt = $pdo->prepare("SELECT fn_cat_delete_servicio(?::BIGINT)");
-            $stmt->execute([$sid]);
-            $result = json_decode($stmt->fetchColumn(), true);
-
-            echo json_encode($result);
+            $stmt = $pdo->prepare("SELECT fn_cat_delete_servicio(?::BIGINT, ?::VARCHAR)");
+            $stmt->execute([$sid, 'admin_panel']);
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         default:

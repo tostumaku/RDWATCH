@@ -82,8 +82,8 @@ try {
         case 'GET':
             $stmt = $pdo->prepare("SELECT fn_cart_get_items(?::INTEGER)");
             $stmt->execute([$carritoId]);
-            $items = json_decode($stmt->fetchColumn(), true);
-            echo json_encode(['ok' => true, 'items' => $items]);
+            $json = $stmt->fetchColumn() ?: '[]';
+            echo '{"ok":true,"items":' . $json . '}';
             break;
 
         // ══════════════════════════════════════
@@ -100,6 +100,7 @@ try {
             $qty = Validation::validateNumeric($data['cantidad'] ?? '') ? (int)$data['cantidad'] : null;
 
             if (!$id_prod || !$qty) {
+                http_response_code(400);
                 echo json_encode(['ok' => false, 'msg' => 'Parámetros id_producto y cantidad son obligatorios y deben ser válidos']);
                 exit;
             }
@@ -107,7 +108,8 @@ try {
             // Consulta 100% opaca
             $stmt = $pdo->prepare("SELECT fn_cart_add_item(?::INTEGER, ?::INTEGER, ?::INTEGER)");
             $stmt->execute([$carritoId, $id_prod, $qty]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         // ══════════════════════════════════════
@@ -121,13 +123,15 @@ try {
             $qty = Validation::validateNumeric($data['cantidad'] ?? '') ? (int)$data['cantidad'] : null;
 
             if (!$id_prod || !$qty) {
+                http_response_code(400);
                 echo json_encode(['ok' => false, 'msg' => 'Datos insuficientes o inválidos para actualizar']);
                 exit;
             }
 
             $stmt = $pdo->prepare("SELECT fn_cart_update_qty(?::INTEGER, ?::INTEGER, ?::INTEGER)");
             $stmt->execute([$carritoId, $id_prod, $qty]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         // ══════════════════════════════════════
@@ -150,7 +154,8 @@ try {
                 $stmt = $pdo->prepare("SELECT fn_cart_clear(?::INTEGER)");
                 $stmt->execute([$carritoId]);
             }
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         default:

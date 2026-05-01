@@ -85,12 +85,12 @@
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cart_get_or_create(
-    p_user_id INTEGER  -- ID único del usuario autenticado
+    p_user_id tab_Usuarios.id_usuario%TYPE  -- ID único del usuario autenticado
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_cart_id INTEGER;   -- Variable de captura de ID
+    v_cart_id tab_Carrito.id_carrito%TYPE;   -- Variable de captura de ID
     v_created BOOLEAN := FALSE; -- Flag de creación
 BEGIN
     -- PASO 1: Consulta de estado actual.
@@ -105,7 +105,8 @@ BEGIN
     -- PASO 2: Inicialización en caso de primer acceso.
     IF v_cart_id IS NULL THEN
         -- Generación manual de ID: Buscamos el máximo actual + 1.
-        -- Esto asegura IDs pequeños y evita el desbordamiento de INTEGER.
+        -- LOCK previene condición de carrera en generación concurrente de IDs.
+        LOCK TABLE tab_Carrito IN EXCLUSIVE MODE;
         SELECT COALESCE(MAX(id_carrito), 0) + 1 INTO v_cart_id FROM tab_Carrito;
         
         INSERT INTO tab_Carrito (
@@ -151,7 +152,7 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cart_get_items(
-    p_cart_id INTEGER  -- Localizador único del carrito
+    p_cart_id tab_Carrito.id_carrito%TYPE  -- Localizador único del carrito
 )
 RETURNS JSON
 AS $$
@@ -200,15 +201,15 @@ $$ LANGUAGE plpgsql STABLE; -- Función estable optimizada para lectura
 DROP FUNCTION IF EXISTS fn_cart_add_item(bigint, bigint, integer);
 DROP FUNCTION IF EXISTS fn_cart_add_item(integer, integer, integer);
 CREATE OR REPLACE FUNCTION fn_cart_add_item(
-    p_cart_id  INTEGER,   -- Relación con tab_Carrito
-    p_prod_id  INTEGER,   -- Relación con tab_Productos
-    p_qty      INTEGER   -- Unidades a incorporar
+    p_cart_id  tab_Carrito.id_carrito%TYPE,   -- Relación con tab_Carrito
+    p_prod_id  tab_Productos.id_producto%TYPE,   -- Relación con tab_Productos
+    p_qty      tab_Carrito_Detalle.cantidad%TYPE   -- Unidades a incorporar
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_existing INTEGER;  -- Buffer para cantidad previa
-    v_det_id   INTEGER;   -- Generación de PK para detalle
+    v_existing tab_Carrito_Detalle.cantidad%TYPE;  -- Buffer para cantidad previa
+    v_det_id   tab_Carrito_Detalle.id_carrito_detalle%TYPE;   -- Generación de PK para detalle
 BEGIN
     -- VERIFICACIÓN: ¿Existe el solapamiento en el carrito?
     SELECT d.cantidad INTO v_existing
@@ -223,7 +224,8 @@ BEGIN
         WHERE id_carrito = p_cart_id AND id_producto = p_prod_id;
     ELSE
         -- OPERACIÓN 2: Nueva inserción.
-        -- Generación manual de ID para el detalle.
+        -- LOCK previene condición de carrera en generación concurrente de IDs.
+        LOCK TABLE tab_Carrito_Detalle IN EXCLUSIVE MODE;
         SELECT COALESCE(MAX(id_carrito_detalle), 0) + 1 INTO v_det_id FROM tab_Carrito_Detalle;
         
         INSERT INTO tab_Carrito_Detalle (
@@ -265,9 +267,9 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS fn_cart_update_qty(bigint, bigint, integer);
 DROP FUNCTION IF EXISTS fn_cart_update_qty(integer, integer, integer);
 CREATE OR REPLACE FUNCTION fn_cart_update_qty(
-    p_cart_id INTEGER,  -- Referencia al carrito activo
-    p_prod_id INTEGER,  -- Referencia al producto
-    p_qty     INTEGER  -- Nueva cantidad absoluta
+    p_cart_id tab_Carrito.id_carrito%TYPE,  -- Referencia al carrito activo
+    p_prod_id tab_Productos.id_producto%TYPE,  -- Referencia al producto
+    p_qty     tab_Carrito_Detalle.cantidad%TYPE  -- Nueva cantidad absoluta
 )
 RETURNS JSON
 AS $$
@@ -300,8 +302,8 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS fn_cart_remove_item(bigint, bigint);
 DROP FUNCTION IF EXISTS fn_cart_remove_item(integer, integer);
 CREATE OR REPLACE FUNCTION fn_cart_remove_item(
-    p_cart_id INTEGER, -- Localizador de la sesión
-    p_prod_id INTEGER  -- ID del producto a retirar
+    p_cart_id tab_Carrito.id_carrito%TYPE, -- Localizador de la sesión
+    p_prod_id tab_Productos.id_producto%TYPE  -- ID del producto a retirar
 )
 RETURNS JSON
 AS $$
@@ -332,7 +334,7 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS fn_cart_clear(bigint);
 DROP FUNCTION IF EXISTS fn_cart_clear(integer);
 CREATE OR REPLACE FUNCTION fn_cart_clear(
-    p_cart_id INTEGER -- ID del carrito a vaciar
+    p_cart_id tab_Carrito.id_carrito%TYPE -- ID del carrito a vaciar
 )
 RETURNS JSON
 AS $$
@@ -399,26 +401,26 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS fn_checkout_process(integer, text, text, text);
 DROP FUNCTION IF EXISTS fn_checkout_process(bigint, text, text, text);
 CREATE OR REPLACE FUNCTION fn_checkout_process(
-    p_user_id    INTEGER,   -- ID del comprador
-    p_direccion  TEXT,     -- Domicilio de destino
-    p_ciudad     TEXT,     -- Ciudad para logística local
-    p_metodo     TEXT      -- Referencia al medio de pago
+    p_user_id    tab_Usuarios.id_usuario%TYPE,   -- ID del comprador
+    p_direccion  tab_Direcciones_Envio.direccion_completa%TYPE,     -- Domicilio de destino
+    p_ciudad     tab_Ciudades.nombre_ciudad%TYPE,     -- Ciudad para logística local
+    p_metodo     tab_Metodos_Pago.nombre_metodo%TYPE      -- Referencia al medio de pago
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_cart_id     INTEGER;     -- Localizador del carrito
-    v_order_id    INTEGER;     -- PK de la nueva Orden
-    v_invoice_id  INTEGER;     -- PK de la nueva Factura
-    v_shipping_id INTEGER;     -- PK del proceso de Envío
-    v_payment_id  INTEGER;     -- PK del registro de Pago
-    v_addr_id     INTEGER;     -- ID de dirección (nueva o existente)
-    v_city_id     INTEGER;    -- ID de mapeo de ciudad
-    v_total       NUMERIC := 0; -- Acumulador de precio final
-    v_concepto    TEXT;       -- Glosa descriptiva
+    v_cart_id     tab_Carrito.id_carrito%TYPE;     -- Localizador del carrito
+    v_order_id    tab_Orden.id_orden%TYPE;     -- PK de la nueva Orden
+    v_invoice_id  tab_Facturas.id_factura%TYPE;     -- PK de la nueva Factura
+    v_shipping_id tab_Envios.id_envio%TYPE;     -- PK del proceso de Envío
+    v_payment_id  tab_Pagos.id_pago%TYPE;     -- PK del registro de Pago
+    v_addr_id     tab_Direcciones_Envio.id_direccion%TYPE;     -- ID de dirección (nueva o existente)
+    v_city_id     tab_Ciudades.id_ciudad%TYPE;    -- ID de mapeo de ciudad
+    v_total       tab_Orden.total_orden%TYPE := 0; -- Acumulador de precio final
+    v_concepto    tab_Orden.concepto%TYPE;       -- Glosa descriptiva
     v_item        RECORD;     -- Cursor de ítems del carrito
     v_idx         INTEGER := 0; -- Iterador de líneas detalle
-    v_subtotal    NUMERIC;    -- Cálculo temporal por línea
+    v_subtotal    tab_Detalle_Factura.subtotal_linea%TYPE;    -- Cálculo temporal por línea
 BEGIN
     -- PASO 1: Localización del recurso base.
     SELECT c.id_carrito INTO v_cart_id
@@ -474,6 +476,8 @@ BEGIN
     END IF;
 
     -- PASO 4: Generación de Entidad Orden (Maestro).
+    -- LOCK previene condición de carrera en generación concurrente de IDs.
+    LOCK TABLE tab_Orden IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_orden), 0) + 1 INTO v_order_id FROM tab_Orden;
     v_concepto := LEFT('Relojería RD-Watch: Despacho a ' || p_direccion, 100);
 
@@ -484,6 +488,8 @@ BEGIN
     );
 
     -- PASO 5: Registro Contable (Facturación).
+    -- LOCK previene condición de carrera en generación concurrente de IDs.
+    LOCK TABLE tab_Facturas IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_factura), 0) + 1 INTO v_invoice_id FROM tab_Facturas;
     INSERT INTO tab_Facturas (
         id_factura, id_orden, id_usuario, fecha_emision, total_factura, estado_factura, fec_insert, usr_insert
@@ -502,6 +508,8 @@ BEGIN
         v_subtotal := v_item.cantidad * v_item.precio;
 
         -- Registro en Detalle de Orden (ID manual secuencial).
+        -- LOCK previene condición de carrera en generación concurrente de IDs.
+        LOCK TABLE tab_Detalle_Orden IN EXCLUSIVE MODE;
         INSERT INTO tab_Detalle_Orden (
             id_detalle_orden, id_orden, id_producto, cantidad, precio_unitario, fec_insert, usr_insert
         ) VALUES (
@@ -510,6 +518,8 @@ BEGIN
         );
 
         -- Registro en Detalle de Factura (ID manual secuencial).
+        -- LOCK previene condición de carrera en generación concurrente de IDs.
+        LOCK TABLE tab_Detalle_Factura IN EXCLUSIVE MODE;
         INSERT INTO tab_Detalle_Factura (
             id_detalle_factura, id_factura, id_producto, cantidad, precio_unitario, subtotal_linea, fec_insert, usr_insert
         ) VALUES (
@@ -533,6 +543,8 @@ BEGIN
 
     IF v_addr_id IS NULL THEN
         -- Normalización de Ciudad y creación de nueva dirección (ID manual).
+        -- LOCK previene condición de carrera en generación concurrente de IDs.
+        LOCK TABLE tab_Direcciones_Envio IN EXCLUSIVE MODE;
         SELECT COALESCE(MAX(id_direccion), 0) + 1 INTO v_addr_id FROM tab_Direcciones_Envio;
 
         SELECT ci.id_ciudad INTO v_city_id
@@ -550,6 +562,8 @@ BEGIN
     END IF;
 
     -- PASO 8: Planificación de Despacho (Logística).
+    -- LOCK previene condición de carrera en generación concurrente de IDs.
+    LOCK TABLE tab_Envios IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_envio), 0) + 1 INTO v_shipping_id FROM tab_Envios;
     INSERT INTO tab_Envios (
         id_envio, id_orden, id_direccion_envio, metodo_envio, estado_envio, fecha_envio, fecha_entrega_estimada, costo_envio, fec_insert, usr_insert
@@ -558,6 +572,8 @@ BEGIN
     );
 
     -- PASO 9: Inicialización del Recibo de Pago.
+    -- LOCK previene condición de carrera en generación concurrente de IDs.
+    LOCK TABLE tab_Pagos IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_pago), 0) + 1 INTO v_payment_id FROM tab_Pagos;
     INSERT INTO tab_Pagos (
         id_pago, id_orden, monto, id_metodo_pago, estado_pago, fecha_pago, fec_insert, usr_insert
@@ -613,7 +629,7 @@ $$ LANGUAGE plpgsql;
 -- ║  rango de fechas de forma independiente.                 ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_orders_list(
-    p_estado     TEXT DEFAULT NULL,   -- Filtro por estado logístico
+    p_estado     tab_Orden.estado_orden%TYPE DEFAULT NULL,   -- Filtro por estado logístico
     p_busqueda   TEXT DEFAULT NULL,   -- Búsqueda por cliente/correo
     p_date_from  TEXT DEFAULT NULL,   -- Límite inferior temporal
     p_date_to    TEXT DEFAULT NULL    -- Límite superior temporal
@@ -674,8 +690,8 @@ $$ LANGUAGE plpgsql STABLE;
 DROP FUNCTION IF EXISTS fn_orders_update_status(bigint, text);
 DROP FUNCTION IF EXISTS fn_orders_update_status(integer, text);
 CREATE OR REPLACE FUNCTION fn_orders_update_status(
-    p_order_id   INTEGER,   -- ID de la orden objeto del cambio
-    p_new_status TEXT      -- Etiqueta del nuevo estado
+    p_order_id   tab_Orden.id_orden%TYPE,   -- ID de la orden objeto del cambio
+    p_new_status tab_Orden.estado_orden%TYPE      -- Etiqueta del nuevo estado
 )
 RETURNS JSON
 AS $$
@@ -777,7 +793,7 @@ $$ LANGUAGE plpgsql STABLE;
 DROP FUNCTION IF EXISTS fn_citas_list_cliente(bigint);
 DROP FUNCTION IF EXISTS fn_citas_list_cliente(integer);
 CREATE OR REPLACE FUNCTION fn_citas_list_cliente(
-    p_user_id INTEGER   -- ID del usuario autenticado
+    p_user_id tab_Usuarios.id_usuario%TYPE   -- ID del usuario autenticado
 )
 RETURNS JSON
 AS $$
@@ -812,49 +828,124 @@ $$ LANGUAGE plpgsql STABLE;
 -- ║  Llamada PHP: SELECT fn_citas_create(user, serv, ...)    ║
 -- ║  Retorna    : JSON {ok: bool, msg: text}                ║
 -- ║                                                         ║
--- ║  FLUJO:                                                 ║
--- ║  1. Cliente llena formulario de agendamiento.           ║
--- ║  2. PHP sanitiza y ejecuta fn_citas_create(...).        ║
--- ║  3. La función verifica cita duplicada pendiente.       ║
--- ║  4. Si ya existe → bloqueo. Si libre → INSERT.          ║
--- ║  5. Retorna {ok, msg} → PHP confirma al cliente.        ║
+-- ║  ACCESO: El cliente puede solicitar citas 24/7.         ║
+-- ║  Las restricciones aplican a la FECHA SELECCIONADA:     ║
 -- ║                                                         ║
--- ║  FILTROS DE CALIDAD:                                     ║
--- ║  1. Anti-Duplicado: Bloquea si el usuario ya tiene una   ║
--- ║     cita IDÉNTICA pendiente (evita spam/errores).       ║
--- ║  2. Identificador: Genera una PK incremental basada en   ║
--- ║     el máximo actual para mantener orden numérico.      ║
+-- ║  REGLAS DE NEGOCIO (28/04/2026):                        ║
+-- ║  1. Anticipación: fecha preferida >= hoy + 2 días.      ║
+-- ║  2. Fecha preferida NO puede ser domingo.               ║
+-- ║  3. Anti-Duplicado: Misma cita+fecha activa.            ║
+-- ║  4. Límite diario cliente: máx 1 solicitud/día.         ║
+-- ║  5. Límite semanal cliente: máx 2 solicitudes/semana.   ║
+-- ║  6. Límite global: máx 10 citas por fecha preferida.    ║
+-- ║                                                         ║
+-- ║  NOTA: Solo citas 'pendiente'/'confirmada' cuentan.     ║
+-- ║  Zona horaria forzada a America/Bogota.                 ║
 -- ╚══════════════════════════════════════════════════════════╝
 DROP FUNCTION IF EXISTS fn_citas_create(bigint, bigint, date, text, text);
 DROP FUNCTION IF EXISTS fn_citas_create(integer, integer, date, text, text);
 CREATE OR REPLACE FUNCTION fn_citas_create(
-    p_user_id     INTEGER,   -- ID del cliente solicitante
-    p_servicio_id INTEGER,   -- ID del tipo de servicio (catálogo)
-    p_fecha       DATE,     -- Jornada preferida para el taller
-    p_prioridad   TEXT,     -- Escala de urgencia (ej: 'normal')
-    p_notas       TEXT      -- Detalle del fallo o requerimiento
+    p_user_id     tab_Usuarios.id_usuario%TYPE,   -- ID del cliente solicitante
+    p_servicio_id tab_Servicios.id_servicio%TYPE,   -- ID del tipo de servicio (catálogo)
+    p_fecha       tab_Reservas.fecha_preferida%TYPE,     -- Jornada preferida para el taller
+    p_prioridad   tab_Reservas.prioridad%TYPE,     -- Escala de urgencia (ej: 'normal')
+    p_notas       tab_Reservas.notas_cliente%TYPE      -- Detalle del fallo o requerimiento
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_new_id INTEGER; -- Albergue de la nueva identidad
+    v_new_id   tab_Reservas.id_reserva%TYPE;
+    v_now      TIMESTAMP;  -- Timestamp en zona horaria local
+    v_count    SMALLINT;   -- Buffer reutilizable para conteos
 BEGIN
-    -- BARRERA DE INTEGRIDAD: Prevención de agendamientos redundantes.
+    -- ═══════════════════════════════════════════
+    -- FORZAR ZONA HORARIA COLOMBIA (UTC-5)
+    -- ═══════════════════════════════════════════
+    SET LOCAL timezone = 'America/Bogota';
+    v_now := NOW();
+
+    -- ═══════════════════════════════════════════
+    -- VALIDACIÓN 1: ANTICIPACIÓN MÍNIMA (2 días)
+    -- ═══════════════════════════════════════════
+    IF p_fecha < (CURRENT_DATE + 2) THEN
+        RETURN json_build_object('ok', false,
+            'msg', 'Fecha inválida: La fecha preferida debe ser al menos 2 días después de hoy (' || TO_CHAR(CURRENT_DATE + 2, 'DD/MM/YYYY') || ' en adelante).');
+    END IF;
+
+    -- ═══════════════════════════════════════════
+    -- VALIDACIÓN 2: FECHA PREFERIDA NO PUEDE SER DOMINGO
+    -- DOW: 0=Dom, 1=Lun ... 6=Sáb
+    -- ═══════════════════════════════════════════
+    IF EXTRACT(DOW FROM p_fecha) = 0 THEN
+        RETURN json_build_object('ok', false,
+            'msg', 'Fecha no disponible: No se atienden servicios los domingos. Horario disponible: Lunes a Viernes 10AM–6PM, Sábados 10AM–3PM.');
+    END IF;
+
+    -- ═══════════════════════════════════════════
+    -- VALIDACIÓN 3: ANTI-DUPLICADO
+    -- ═══════════════════════════════════════════
     IF EXISTS (
         SELECT 1 FROM tab_Reservas
         WHERE id_usuario = p_user_id
           AND id_servicio = p_servicio_id
           AND fecha_preferida = p_fecha
-          AND estado_reserva = 'pendiente' -- Solo si aún no ha sido procesada
+          AND estado_reserva IN ('pendiente', 'confirmada')
     ) THEN
         RETURN json_build_object('ok', false,
-            'msg', 'Acción denegada: Ya cuenta con una solicitud pendiente para este servicio en la fecha indicada.');
+            'msg', 'Acción denegada: Ya cuenta con una solicitud activa para este servicio en la fecha indicada.');
     END IF;
 
-    -- PASO DE SECUENCIE: Obtención del siguiente vértice en la tabla.
+    -- ═══════════════════════════════════════════
+    -- VALIDACIÓN 4: LÍMITE DIARIO POR CLIENTE (máx 1/día)
+    -- Basado en fecha de creación (anti-spam)
+    -- ═══════════════════════════════════════════
+    SELECT COUNT(1) INTO v_count
+    FROM tab_Reservas
+    WHERE id_usuario = p_user_id
+      AND fecha_reserva::DATE = CURRENT_DATE
+      AND estado_reserva IN ('pendiente', 'confirmada');
+
+    IF v_count >= 1 THEN
+        RETURN json_build_object('ok', false,
+            'msg', 'Límite alcanzado: Solo puede realizar 1 solicitud de servicio por día. Intente nuevamente mañana.');
+    END IF;
+
+    -- ═══════════════════════════════════════════
+    -- VALIDACIÓN 5: LÍMITE SEMANAL POR CLIENTE (máx 2/semana)
+    -- Basado en fecha de creación (anti-spam)
+    -- ═══════════════════════════════════════════
+    SELECT COUNT(1) INTO v_count
+    FROM tab_Reservas
+    WHERE id_usuario = p_user_id
+      AND fecha_reserva >= DATE_TRUNC('week', CURRENT_DATE)
+      AND estado_reserva IN ('pendiente', 'confirmada');
+
+    IF v_count >= 2 THEN
+        RETURN json_build_object('ok', false,
+            'msg', 'Límite semanal alcanzado: Solo puede realizar 2 solicitudes por semana. Intente la próxima semana.');
+    END IF;
+
+    -- ═══════════════════════════════════════════
+    -- VALIDACIÓN 6: LÍMITE GLOBAL DIARIO (máx 10 citas/día)
+    -- Basado en FECHA PREFERIDA (capacidad del taller)
+    -- ═══════════════════════════════════════════
+    SELECT COUNT(1) INTO v_count
+    FROM tab_Reservas
+    WHERE fecha_preferida = p_fecha
+      AND estado_reserva IN ('pendiente', 'confirmada');
+
+    IF v_count >= 10 THEN
+        RETURN json_build_object('ok', false,
+            'msg', 'Agenda completa: La fecha seleccionada ya tiene el máximo de citas permitidas (10). Por favor, seleccione otro día.');
+    END IF;
+
+    -- ═══════════════════════════════════════════
+    -- INSERCIÓN: Registro formal en la agenda
+    -- LOCK previene condición de carrera en generación concurrente de IDs.
+    -- ═══════════════════════════════════════════
+    LOCK TABLE tab_Reservas IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(r.id_reserva), 0) + 1 INTO v_new_id FROM tab_Reservas r;
 
-    -- INSERCIÓN: Registro formal en la agenda.
     INSERT INTO tab_Reservas (
         id_reserva, 
         id_usuario, 
@@ -874,12 +965,12 @@ BEGIN
         p_notas, 
         p_prioridad, 
         'pendiente', 
-        NOW(), 
+        v_now, 
         'usr_web_client', 
-        NOW()
+        v_now
     );
 
-    RETURN json_build_object('ok', true, 'msg', 'Su solicitud ha sido agendada. Un técnico la revisará a la brevedad.');
+    RETURN json_build_object('ok', true, 'msg', 'Su solicitud ha sido agendada exitosamente. Un técnico la revisará a la brevedad.');
 END;
 $$ LANGUAGE plpgsql;
 
@@ -892,26 +983,47 @@ $$ LANGUAGE plpgsql;
 -- ║  Llamada PHP: SELECT fn_citas_update_status(1, 'confirm')║
 -- ║  Retorna    : JSON {ok: true, msg: text}                ║
 -- ║                                                         ║
--- ║  FLUJO:                                                 ║
--- ║  1. Admin selecciona nuevo estado de la cita.           ║
--- ║  2. PHP ejecuta fn_citas_update_status(id, estado, adm).║
--- ║  3. UPDATE con sello de auditoría (usr + fecha).        ║
--- ║  4. Retorna {ok, msg} → PHP confirma al admin.          ║
--- ║                                                         ║
--- ║  AUDITORÍA:                                             ║
--- ║  Conserva el rastro de qué administrador u operador      ║
--- ║  modificó la cita y en qué momento preciso.             ║
+-- ║  REGLAS (28/04/2026):                                   ║
+-- ║  - Cancelación: Solo si fecha_preferida > hoy + 1 día.  ║
+-- ║  - Admin (p_admin_id = 'admin_%') puede cancelar sin    ║
+-- ║    restricción de anticipación.                         ║
+-- ║  - Auditoría: usr_update + fec_update siempre.          ║
 -- ╚══════════════════════════════════════════════════════════╝
 DROP FUNCTION IF EXISTS fn_citas_update_status(bigint, text, text);
 DROP FUNCTION IF EXISTS fn_citas_update_status(integer, text, text);
 CREATE OR REPLACE FUNCTION fn_citas_update_status(
-    p_reserva_id  INTEGER,  -- ID de la reserva a gestionar
-    p_new_status  TEXT,    -- Nuevo estado (confirmada, cancelada, etc)
-    p_admin_id    TEXT     -- Sello del operador actuante
+    p_reserva_id  tab_Reservas.id_reserva%TYPE,  -- ID de la reserva a gestionar
+    p_new_status  tab_Reservas.estado_reserva%TYPE,    -- Nuevo estado (confirmada, cancelada, etc)
+    p_admin_id    tab_Reservas.usr_update%TYPE     -- Sello del operador actuante
 )
 RETURNS JSON
 AS $$
+DECLARE
+    v_fecha_pref tab_Reservas.fecha_preferida%TYPE;
 BEGIN
+    -- Forzar zona horaria Colombia
+    SET LOCAL timezone = 'America/Bogota';
+
+    -- ═══════════════════════════════════════════
+    -- VALIDACIÓN: Cancelación con anticipación mínima (1 día)
+    -- Solo aplica a clientes (p_admin_id NO empieza con 'admin_')
+    -- ═══════════════════════════════════════════
+    IF p_new_status = 'cancelada' AND LEFT(p_admin_id, 6) <> 'admin_' THEN
+        SELECT r.fecha_preferida INTO v_fecha_pref
+        FROM tab_Reservas r
+        WHERE r.id_reserva = p_reserva_id;
+
+        IF v_fecha_pref IS NULL THEN
+            RETURN json_build_object('ok', false,
+                'msg', 'Error: No se encontró la cita especificada.');
+        END IF;
+
+        IF v_fecha_pref <= (CURRENT_DATE + 1) THEN
+            RETURN json_build_object('ok', false,
+                'msg', 'No es posible cancelar: Las citas solo pueden cancelarse con al menos 1 día de anticipación antes de la fecha programada.');
+        END IF;
+    END IF;
+
     -- DML focalizado con inyección de timestamps de control.
     UPDATE tab_Reservas
     SET estado_reserva = p_new_status, 
@@ -952,15 +1064,15 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 DROP FUNCTION IF EXISTS fn_contacto_public_create(text, text, bigint, text);
 CREATE OR REPLACE FUNCTION fn_contacto_public_create(
-    p_nombre_remitente TEXT,
-    p_correo_remitente TEXT,
-    p_telefono_remitente BIGINT,
-    p_mensaje TEXT
+    p_nombre_remitente tab_Contacto.nombre_remitente%TYPE,
+    p_correo_remitente tab_Contacto.correo_remitente%TYPE,
+    p_telefono_remitente tab_Contacto.telefono_remitente%TYPE,
+    p_mensaje tab_Contacto.mensaje%TYPE
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_new_id INTEGER;
+    v_new_id tab_Contacto.id_contacto%TYPE;
 BEGIN
     -- BARRERA ANTI-SPAM (NATIVA)
     -- Evita que el mismo correo envíe el mismo texto en un lapso muy corto.
@@ -975,6 +1087,8 @@ BEGIN
     END IF;
 
     -- GENERACIÓN DE PK
+    -- LOCK previene condición de carrera en generación concurrente de IDs.
+    LOCK TABLE tab_Contacto IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_contacto), 0) + 1 INTO v_new_id FROM tab_Contacto;
 
     -- INSERCIÓN EN TAB_CONTACTO

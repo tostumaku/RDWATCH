@@ -57,9 +57,8 @@ try {
             $stmt = $pdo->prepare("SELECT fn_cat_get_productos()");
             $stmt->execute();
             // fetchColumn() retorna el string JSON directamente
-            // json_decode lo convierte en array PHP
-            $productos = json_decode($stmt->fetchColumn(), true);
-            echo json_encode(['ok' => true, 'productos' => $productos]);
+            $json = $stmt->fetchColumn() ?: '[]';
+            echo '{"ok":true,"productos":' . $json . '}';
             break;
 
         // ══════════════════════════════════════
@@ -99,7 +98,8 @@ try {
                 $user_id
             ]);
             // La respuesta YA viene formateada como {ok: bool, msg: string}
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         // ══════════════════════════════════════
@@ -112,6 +112,7 @@ try {
             $data = getJsonInput();
             // El ID es obligatorio para saber QUÉ producto actualizar
             if (!isset($data['id_producto'])) {
+                http_response_code(400);
                 echo json_encode(['ok' => false, 'msg' => 'Se requiere el ID del producto para realizar la actualización']);
                 exit;
             }
@@ -129,7 +130,8 @@ try {
                 $data['id_marca'], $data['id_categoria'], $data['id_subcategoria'],
                 isset($data['estado']) ? (bool)$data['estado'] : true
             ]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         // ══════════════════════════════════════
@@ -147,13 +149,15 @@ try {
             $pid = $data['id_producto'] ?? null;
 
             if (!$pid) {
+                http_response_code(400);
                 echo json_encode(['ok' => false, 'msg' => 'ID de producto no proporcionado']);
                 exit;
             }
 
             $stmt = $pdo->prepare("SELECT fn_cat_delete_producto(?::INTEGER)");
             $stmt->execute([$pid]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         default:

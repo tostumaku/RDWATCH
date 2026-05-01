@@ -62,8 +62,8 @@ try {
         case 'marcas':
             $stmt = $pdo->prepare("SELECT fn_cat_dropdown_marcas()");
             $stmt->execute();
-            $data = json_decode($stmt->fetchColumn(), true);
-            echo json_encode(['ok' => true, 'marcas' => $data]);
+            $json = $stmt->fetchColumn() ?: '[]';
+            echo '{"ok":true,"marcas":' . $json . '}';
             break;
 
         // ══════════════════════════════════════
@@ -73,8 +73,8 @@ try {
         case 'categorias':
             $stmt = $pdo->prepare("SELECT fn_cat_dropdown_categorias()");
             $stmt->execute();
-            $data = json_decode($stmt->fetchColumn(), true);
-            echo json_encode(['ok' => true, 'categorias' => $data]);
+            $json = $stmt->fetchColumn() ?: '[]';
+            echo '{"ok":true,"categorias":' . $json . '}';
             break;
 
         // ══════════════════════════════════════
@@ -95,8 +95,8 @@ try {
             // - estado = TRUE (solo las activas)
             $stmt = $pdo->prepare("SELECT fn_cat_dropdown_subcategorias(?)");
             $stmt->execute([$idCat]);
-            $data = json_decode($stmt->fetchColumn(), true);
-            echo json_encode(['ok' => true, 'subcategorias' => $data]);
+            $json = $stmt->fetchColumn() ?: '[]';
+            echo '{"ok":true,"subcategorias":' . $json . '}';
             break;
 
         default:

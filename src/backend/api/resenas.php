@@ -96,7 +96,8 @@ try {
         // 4. Auditoría (usr_insert, fec_insert)
         $stmt = $pdo->prepare("SELECT fn_reviews_create(?::INTEGER, ?::smallint, ?)");
         $stmt->execute([$id_usuario, $calificacion, $comentario]);
-        echo json_encode(json_decode($stmt->fetchColumn(), true));
+        $jsonResponse = $stmt->fetchColumn();
+        echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
         exit;
     }
 

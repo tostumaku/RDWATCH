@@ -416,9 +416,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const fechaInput = document.getElementById('fechaPreferida');
     if (fechaInput) {
-        const today = new Date().toISOString().split('T')[0];
-        fechaInput.min = today;
-        fechaInput.value = today;
+        // Anticipación mínima: 2 días desde hoy
+        const minDate = new Date();
+        minDate.setDate(minDate.getDate() + 2);
+        // Si cae en domingo, mover al lunes
+        if (minDate.getDay() === 0) minDate.setDate(minDate.getDate() + 1);
+        const minDateStr = minDate.toISOString().split('T')[0];
+        fechaInput.min = minDateStr;
+        fechaInput.value = minDateStr;
+
+        // Bloquear domingos en el selector de fecha
+        fechaInput.addEventListener('input', function () {
+            const selected = new Date(this.value + 'T12:00:00');
+            if (selected.getDay() === 0) {
+                showNotification('⚠️ Los domingos no están disponibles. Se ajustó al lunes siguiente.', true);
+                selected.setDate(selected.getDate() + 1);
+                this.value = selected.toISOString().split('T')[0];
+            }
+        });
     }
 
     const inputDepartamento = document.getElementById('inputDepartamento');

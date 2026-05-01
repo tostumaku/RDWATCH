@@ -61,21 +61,21 @@ try {
             // Admin ve TODAS las citas con JOIN usuarios y servicios
             $stmt = $pdo->prepare("SELECT fn_citas_list_admin()");
             $stmt->execute();
-            $citas = json_decode($stmt->fetchColumn(), true);
+            $citasJson = $stmt->fetchColumn() ?: '[]';
 
             // Admin también ve solicitudes del formulario de contacto
             $stmtC = $pdo->prepare("SELECT fn_contacto_list_admin()");
             $stmtC->execute();
-            $contactos = json_decode($stmtC->fetchColumn(), true);
+            $contactosJson = $stmtC->fetchColumn() ?: '[]';
 
-            echo json_encode(['ok' => true, 'citas' => $citas, 'contactos' => $contactos ?? []]);
+            echo '{"ok":true,"citas":' . $citasJson . ',"contactos":' . $contactosJson . '}';
         }
         else {
             // Cliente solo ve sus propias citas
             $stmt = $pdo->prepare("SELECT fn_citas_list_cliente(?::INTEGER)");
             $stmt->execute([$user_id]);
-            $citas = json_decode($stmt->fetchColumn(), true);
-            echo json_encode(['ok' => true, 'citas' => $citas]);
+            $json = $stmt->fetchColumn() ?: '[]';
+            echo '{"ok":true,"citas":' . $json . '}';
         }
 
     }
@@ -103,7 +103,8 @@ try {
             // Llamada opaca
             $stmt = $pdo->prepare("SELECT fn_citas_update_status(?::INTEGER, ?, ?)");
             $stmt->execute([$data['id_reserva'], $data['estado'], 'admin_' . $user_id]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             exit;
         }
 
@@ -119,10 +120,36 @@ try {
         $prioridad = Validation::sanitizeString($data['p_prioridad'] ?? 'normal');
         $notas = Validation::sanitizeString($data['p_notas'] ?? '');
 
-        // fn_citas_create incluye anti-duplicado internamente
-        $stmt = $pdo->prepare("SELECT fn_citas_create(?::INTEGER, ?::INTEGER, ?::date, ?, ?)");
+        // ──────────────────────────────────────────────
+        // VALIDACIÓN ANTICIPADA: Fecha Preferida
+        // Rechaza antes de llegar a PostgreSQL (ahorro de queries)
+        // El usuario puede solicitar 24/7, las restricciones
+        // aplican a la fecha seleccionada para la cita.
+        // ──────────────────────────────────────────────
+        date_default_timezone_set('America/Bogota');
+
+        // Anticipación mínima: fecha preferida >= hoy + 2 días
+        $minDate = date('Y-m-d', strtotime('+2 days'));
+        if ($fecha_pref < $minDate) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'msg' => 'Fecha inválida: La fecha preferida debe ser al menos 2 días después de hoy (' . date('d/m/Y', strtotime('+2 days')) . ' en adelante).']);
+            exit;
+        }
+
+        // La fecha preferida no puede ser domingo
+        $fechaDow = (int)date('w', strtotime($fecha_pref)); // 0=Dom
+        if ($fechaDow === 0) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'msg' => 'Fecha no disponible: No se atienden servicios los domingos. Horario disponible: Lunes a Viernes 10AM–6PM, Sábados 10AM–3PM.']);
+            exit;
+        }
+
+        // fn_citas_create valida límites (1/día, 2/semana, 10/fecha) en PostgreSQL
+        $stmt = $pdo->prepare("SELECT fn_citas_create(?::SMALLINT, ?::SMALLINT, ?::date, ?, ?)");
         $stmt->execute([$user_id, $id_servicio, $fecha_pref, $prioridad, $notas]);
-        echo json_encode(json_decode($stmt->fetchColumn(), true));
+        $jsonResponse = $stmt->fetchColumn();
+        echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
+
 
     }
     elseif ($method === 'PUT') {
@@ -140,13 +167,15 @@ try {
         $nuevo_estado = Validation::sanitizeString($data['estado'] ?? '');
 
         if (!$id_reserva || empty($nuevo_estado)) {
+            http_response_code(400);
             echo json_encode(['ok' => false, 'msg' => 'Faltan parámetros críticos (ID o Estado)']);
             exit;
         }
 
         $stmt = $pdo->prepare("SELECT fn_citas_update_status(?::INTEGER, ?, ?)");
         $stmt->execute([$id_reserva, $nuevo_estado, 'admin_' . $user_id]);
-        echo json_encode(json_decode($stmt->fetchColumn(), true));
+        $jsonResponse = $stmt->fetchColumn();
+        echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
 
     }
     else {

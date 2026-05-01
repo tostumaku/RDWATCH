@@ -50,8 +50,8 @@ try {
         case 'GET':
             $stmt = $pdo->prepare("SELECT fn_cat_get_marcas()");
             $stmt->execute();
-            $marcas = json_decode($stmt->fetchColumn(), true);
-            echo json_encode(['ok' => true, 'marcas' => $marcas]);
+            $json = $stmt->fetchColumn() ?: '[]';
+            echo '{"ok":true,"marcas":' . $json . '}';
             break;
 
         // ══════════════════════════════════════
@@ -77,7 +77,8 @@ try {
             // El booleano se pasa como 'true'/'false' string para PostgreSQL
             $stmt = $pdo->prepare("SELECT fn_cat_create_marca(?, ?, ?)");
             $stmt->execute([$data['id_marca'], $data['nom_marca'], $estado]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         // ══════════════════════════════════════
@@ -89,6 +90,7 @@ try {
 
             $data = getCachedJsonInput();
             if (!isset($data['id_marca'], $data['nom_marca'])) {
+                http_response_code(400);
                 echo json_encode(['ok' => false, 'msg' => 'Datos insuficientes para la actualización']);
                 exit;
             }
@@ -97,7 +99,8 @@ try {
 
             $stmt = $pdo->prepare("SELECT fn_cat_update_marca(?, ?, ?)");
             $stmt->execute([$data['id_marca'], $data['nom_marca'], $estado]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         // ══════════════════════════════════════
@@ -114,13 +117,15 @@ try {
             $idMarca = $data['id_marca'] ?? null;
 
             if (!$idMarca) {
+                http_response_code(400);
                 echo json_encode(['ok' => false, 'msg' => 'Se requiere el ID de la marca']);
                 exit;
             }
 
-            $stmt = $pdo->prepare("SELECT fn_cat_delete_marca(?::INTEGER)");
-            $stmt->execute([$idMarca]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $stmt = $pdo->prepare("SELECT fn_cat_delete_marca(?::INTEGER, ?::VARCHAR)");
+            $stmt->execute([$idMarca, 'admin_panel']);
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             break;
 
         default:

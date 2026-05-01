@@ -162,16 +162,16 @@ $$ LANGUAGE plpgsql STABLE; -- STABLE indica seguridad para lecturas repetitivas
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cat_create_producto(
-    p_id         INTEGER,    -- ID manual asignado por el administrador
-    p_nombre     TEXT,      -- Nombre oficial del producto
-    p_desc       TEXT,      -- Reseña técnica sanitizada
-    p_precio     NUMERIC,   -- Valor comercial
-    p_stock      SMALLINT,  -- Existencias iniciales
-    p_imagen     TEXT,      -- Ruta del archivo de imagen
-    p_id_marca   INTEGER,    -- Enlace con tab_Marcas
-    p_id_cat     INTEGER,   -- Enlace con tab_Categorias
-    p_id_subcat  INTEGER,   -- Enlace con tab_Subcategorias (Validación estricta)
-    p_usr        TEXT       -- ID/Nombre del administrador operador
+    p_id         tab_Productos.id_producto%TYPE,    -- ID manual asignado por el administrador
+    p_nombre     tab_Productos.nom_producto%TYPE,      -- Nombre oficial del producto
+    p_desc       tab_Productos.descripcion%TYPE,      -- Reseña técnica sanitizada
+    p_precio     tab_Productos.precio%TYPE,   -- Valor comercial
+    p_stock      tab_Productos.stock%TYPE,  -- Existencias iniciales
+    p_imagen     tab_Productos.url_imagen%TYPE,      -- Ruta del archivo de imagen
+    p_id_marca   tab_Productos.id_marca%TYPE,    -- Enlace con tab_Marcas
+    p_id_cat     tab_Productos.id_categoria%TYPE,   -- Enlace con tab_Categorias
+    p_id_subcat  tab_Productos.id_subcategoria%TYPE,   -- Enlace con tab_Subcategorias (Validación estricta)
+    p_usr        tab_Productos.usr_insert%TYPE       -- ID/Nombre del administrador operador
 )
 RETURNS JSON  -- Formato unificado de respuesta de operación
 AS $$
@@ -244,16 +244,16 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cat_update_producto(
-    p_id         INTEGER,    -- ID único del producto a modificar
-    p_nombre     TEXT,      -- Nombre actualizado
-    p_desc       TEXT,      -- Descripción editada
-    p_precio     NUMERIC,   -- Nuevo precio oficial
-    p_stock      SMALLINT,  -- Nueva cifra de inventario
-    p_imagen     TEXT,      -- Actualización de asset visual
-    p_id_marca   INTEGER,    -- Referencia a marca
-    p_id_cat     INTEGER,   -- Referencia a categoría principal
-    p_id_subcat  INTEGER,   -- Referencia a subcategoría
-    p_estado     BOOLEAN    -- Nuevo estado (TRUE=Activo, FALSE=Inactivo)
+    p_id         tab_Productos.id_producto%TYPE,    -- ID único del producto a modificar
+    p_nombre     tab_Productos.nom_producto%TYPE,      -- Nombre actualizado
+    p_desc       tab_Productos.descripcion%TYPE,      -- Descripción editada
+    p_precio     tab_Productos.precio%TYPE,   -- Nuevo precio oficial
+    p_stock      tab_Productos.stock%TYPE,  -- Nueva cifra de inventario
+    p_imagen     tab_Productos.url_imagen%TYPE,      -- Actualización de asset visual
+    p_id_marca   tab_Productos.id_marca%TYPE,    -- Referencia a marca
+    p_id_cat     tab_Productos.id_categoria%TYPE,   -- Referencia a categoría principal
+    p_id_subcat  tab_Productos.id_subcategoria%TYPE,   -- Referencia a subcategoría
+    p_estado     tab_Productos.estado%TYPE    -- Nuevo estado (TRUE=Activo, FALSE=Inactivo)
 )
 RETURNS JSON  -- Retorno estándar de confirmación
 AS $$
@@ -310,7 +310,7 @@ $$ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS fn_cat_delete_producto(INTEGER, VARCHAR);
 
 CREATE OR REPLACE FUNCTION fn_cat_delete_producto(
-    p_id  INTEGER           -- ID único del producto objetivo
+    p_id  tab_Productos.id_producto%TYPE           -- ID único del producto objetivo
 )
 RETURNS JSON  -- {ok: bool, msg: string}
 AS $$
@@ -417,9 +417,9 @@ $$ LANGUAGE plpgsql STABLE; -- Función de solo lectura optimizada
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cat_create_marca(
-    p_id     INTEGER,   -- ID designado por arquitectura
-    p_nombre TEXT,     -- Etiqueta comercial de la marca
-    p_estado BOOLEAN DEFAULT TRUE  -- Disponibilidad inicial
+    p_id     tab_Marcas.id_marca%TYPE,   -- ID designado por arquitectura
+    p_nombre tab_Marcas.nom_marca%TYPE,     -- Etiqueta comercial de la marca
+    p_estado tab_Marcas.estado_marca%TYPE DEFAULT TRUE  -- Disponibilidad inicial
 )
 RETURNS JSON AS $$
 BEGIN
@@ -470,9 +470,9 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cat_update_marca(
-    p_id     INTEGER,   -- Identificador de la marca objetivo
-    p_nombre TEXT,     -- Nuevo nombre comercial
-    p_estado BOOLEAN DEFAULT TRUE  -- Nuevo estado binario
+    p_id     tab_Marcas.id_marca%TYPE,   -- Identificador de la marca objetivo
+    p_nombre tab_Marcas.nom_marca%TYPE,     -- Nuevo nombre comercial
+    p_estado tab_Marcas.estado_marca%TYPE DEFAULT TRUE  -- Nuevo estado binario
 )
 RETURNS JSON AS $$
 BEGIN
@@ -503,8 +503,8 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cat_delete_marca(
-    p_id  INTEGER,          -- ID de la marca a desactivar
-    p_usr VARCHAR(100)      -- Usuario que ejecuta la operación
+    p_id  tab_Marcas.id_marca%TYPE,          -- ID de la marca a desactivar
+    p_usr tab_Marcas.usr_delete%TYPE      -- Usuario que ejecuta la operación
 )
 RETURNS JSON AS $$
 DECLARE
@@ -599,10 +599,10 @@ $$ LANGUAGE plpgsql STABLE; -- Optimización de lectura fija
 -- ║  4. Retorna {ok, msg} → PHP confirma al frontend.       ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_cat_create_categoria(
-    p_id      INTEGER,      -- ID único sugerido
-    p_nombre  TEXT,         -- Nombre de la categoría
-    p_desc    TEXT DEFAULT '', -- Descripción (opcional)
-    p_estado  BOOLEAN DEFAULT TRUE -- Disponibilidad inicial
+    p_id      tab_Categorias.id_categoria%TYPE,      -- ID único sugerido
+    p_nombre  tab_Categorias.nom_categoria%TYPE,         -- Nombre de la categoría
+    p_desc    tab_Categorias.descripcion_categoria%TYPE DEFAULT '', -- Descripción (opcional)
+    p_estado  tab_Categorias.estado%TYPE DEFAULT TRUE -- Disponibilidad inicial
 ) RETURNS JSON AS $$
 BEGIN
     -- Inserción directa con sellos de auditoría de sistema.
@@ -641,10 +641,10 @@ $$ LANGUAGE plpgsql;
 -- ║  4. Retorna {ok, msg} → PHP confirma al frontend.       ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_cat_update_categoria(
-    p_id      INTEGER,      -- ID de la categoría a editar
-    p_nombre  TEXT,         -- Nuevo nombre
-    p_desc    TEXT DEFAULT '', -- Nueva descripción
-    p_estado  BOOLEAN DEFAULT TRUE -- Nuevo estado
+    p_id      tab_Categorias.id_categoria%TYPE,      -- ID de la categoría a editar
+    p_nombre  tab_Categorias.nom_categoria%TYPE,         -- Nuevo nombre
+    p_desc    tab_Categorias.descripcion_categoria%TYPE DEFAULT '', -- Nueva descripción
+    p_estado  tab_Categorias.estado%TYPE DEFAULT TRUE -- Nuevo estado
 ) RETURNS JSON AS $$
 BEGIN
     -- Actualización de datos con registro de cambios (fec_update).
@@ -677,8 +677,8 @@ $$ LANGUAGE plpgsql;
 -- ║  2. Productos activos asociados → bloquea.              ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_cat_delete_categoria(
-    p_id  INTEGER,          -- ID de la categoría a desactivar
-    p_usr VARCHAR(100)      -- Usuario que ejecuta la operación
+    p_id  tab_Categorias.id_categoria%TYPE,          -- ID de la categoría a desactivar
+    p_usr tab_Categorias.usr_delete%TYPE      -- Usuario que ejecuta la operación
 )
 RETURNS JSON AS $$
 BEGIN
@@ -779,9 +779,9 @@ $$ LANGUAGE plpgsql STABLE; -- Función estable para lecturas continuas
 -- ║  DENTRO de la misma categoría padre.                    ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_cat_create_subcategoria(
-    p_id_cat  INTEGER,  -- ID del padre
-    p_id_sub  INTEGER,  -- ID del hijo (PK compuesta)
-    p_nombre  TEXT      -- Etiqueta descriptiva
+    p_id_cat  tab_Subcategorias.id_categoria%TYPE,  -- ID del padre
+    p_id_sub  tab_Subcategorias.id_subcategoria%TYPE,  -- ID del hijo (PK compuesta)
+    p_nombre  tab_Subcategorias.nom_subcategoria%TYPE      -- Etiqueta descriptiva
 ) RETURNS JSON AS $$
 BEGIN
     -- BARRERA: Control de duplicidad en la clave primaria compuesta.
@@ -828,10 +828,10 @@ $$ LANGUAGE plpgsql;
 -- ║  4. Retorna {ok, msg} → PHP confirma al frontend.       ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_cat_update_subcategoria(
-    p_id_cat  INTEGER,  -- ID del padre
-    p_id_sub  INTEGER,  -- ID del hijo
-    p_nombre  TEXT,     -- Nuevo nombre
-    p_estado  BOOLEAN DEFAULT TRUE  -- Nuevo estado (permite reactivar)
+    p_id_cat  tab_Subcategorias.id_categoria%TYPE,  -- ID del padre
+    p_id_sub  tab_Subcategorias.id_subcategoria%TYPE,  -- ID del hijo
+    p_nombre  tab_Subcategorias.nom_subcategoria%TYPE,     -- Nuevo nombre
+    p_estado  tab_Subcategorias.estado%TYPE DEFAULT TRUE  -- Nuevo estado (permite reactivar)
 ) RETURNS JSON AS $$
 BEGIN
     -- DML focalizado por clave compuesta.
@@ -861,9 +861,9 @@ $$ LANGUAGE plpgsql;
 -- ║  Usa clave compuesta (id_categoria, id_subcategoria).   ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_cat_delete_subcategoria(
-    p_id_cat INTEGER,
-    p_id_sub INTEGER,
-    p_usr    VARCHAR(100)  -- Usuario que ejecuta la operación
+    p_id_cat tab_Subcategorias.id_categoria%TYPE,
+    p_id_sub tab_Subcategorias.id_subcategoria%TYPE,
+    p_usr    tab_Subcategorias.usr_delete%TYPE  -- Usuario que ejecuta la operación
 )
 RETURNS JSON AS $$
 DECLARE 
@@ -1002,7 +1002,7 @@ $$ LANGUAGE plpgsql STABLE;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cat_dropdown_subcategorias(
-    p_id_cat INTEGER  -- ID de la categoría padre seleccionada
+    p_id_cat tab_Subcategorias.id_categoria%TYPE  -- ID de la categoría padre seleccionada
 )
 RETURNS JSON AS $$
 DECLARE 
@@ -1096,12 +1096,12 @@ $$ LANGUAGE plpgsql STABLE;
 -- ║  confusión en el agendamiento.                          ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_cat_create_servicio(
-    p_id       BIGINT,   -- ID manual
-    p_nombre   TEXT,     -- Ejemplo: "Pulido de Cristal"
-    p_desc     TEXT,     -- Especificación técnica
-    p_precio   NUMERIC,  -- Costo
-    p_duracion TEXT,     -- Ej: "3 días hábiles"
-    p_usr      TEXT      -- Auditoría
+    p_id       tab_Servicios.id_servicio%TYPE,   -- ID manual
+    p_nombre   tab_Servicios.nom_servicio%TYPE,     -- Ejemplo: "Pulido de Cristal"
+    p_desc     tab_Servicios.descripcion%TYPE,     -- Especificación técnica
+    p_precio   tab_Servicios.precio_servicio%TYPE,  -- Costo
+    p_duracion tab_Servicios.duracion_estimada%TYPE,     -- Ej: "3 días hábiles"
+    p_usr      tab_Servicios.usr_insert%TYPE      -- Auditoría
 ) RETURNS JSON AS $$
 BEGIN
     -- VERIFICACIÓN: Integridad semántica del portafolio.
@@ -1156,12 +1156,12 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_cat_update_servicio(
-    p_id       BIGINT,   -- ID del servicio a modificar
-    p_nombre   TEXT,     -- Nuevo nombre
-    p_desc     TEXT,     -- Nueva especificación
-    p_precio   NUMERIC,  -- Ajuste de tarifa
-    p_duracion TEXT,     -- Ajuste de tiempo
-    p_estado   BOOLEAN DEFAULT TRUE -- Disponibilidad lógica
+    p_id       tab_Servicios.id_servicio%TYPE,   -- ID del servicio a modificar
+    p_nombre   tab_Servicios.nom_servicio%TYPE,     -- Nuevo nombre
+    p_desc     tab_Servicios.descripcion%TYPE,     -- Nueva especificación
+    p_precio   tab_Servicios.precio_servicio%TYPE,  -- Ajuste de tarifa
+    p_duracion tab_Servicios.duracion_estimada%TYPE,     -- Ajuste de tiempo
+    p_estado   tab_Servicios.estado%TYPE DEFAULT TRUE -- Disponibilidad lógica
 ) RETURNS JSON AS $$
 BEGIN
     -- DML con sello de auditoría de edición.
@@ -1193,8 +1193,8 @@ $$ LANGUAGE plpgsql;
 -- ║  Las reservas existentes conservan su FK intacta.       ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_cat_delete_servicio(
-    p_id  BIGINT,           -- ID del servicio a desactivar
-    p_usr VARCHAR(100)      -- Usuario que ejecuta la operación
+    p_id  tab_Servicios.id_servicio%TYPE,           -- ID del servicio a desactivar
+    p_usr tab_Servicios.usr_delete%TYPE      -- Usuario que ejecuta la operación
 )
 RETURNS JSON AS $$
 DECLARE

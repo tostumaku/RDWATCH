@@ -138,7 +138,8 @@ try {
                 // Fallback: update_store legacy
                 $stmt = $pdo->prepare("SELECT fn_admin_update_settings(?::json)");
                 $stmt->execute([json_encode($data)]);
-                echo json_encode(json_decode($stmt->fetchColumn(), true));
+                $jsonResponse = $stmt->fetchColumn();
+                echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
             }
             break;
 

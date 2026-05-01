@@ -49,7 +49,7 @@
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_auth_get_user(
-    p_email TEXT  -- El correo electrónico que el usuario escribió en el formulario de login
+    p_email tab_Usuarios.correo_usuario%TYPE  -- El correo electrónico que el usuario escribió en el formulario de login
 )
 RETURNS JSON  -- Retorna UN objeto JSON (no una tabla), PHP hace json_decode()
 AS $$
@@ -99,8 +99,8 @@ $$ LANGUAGE plpgsql STABLE;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_auth_update_hash(
-    p_uid      INTEGER,  -- ID del usuario cuya contraseña se actualiza
-    p_new_hash TEXT     -- Nuevo hash bcrypt generado por PHP con password_hash()
+    p_uid      tab_Usuarios.id_usuario%TYPE,  -- ID del usuario cuya contraseña se actualiza
+    p_new_hash tab_Usuarios.contra%TYPE     -- Nuevo hash bcrypt generado por PHP con password_hash()
 )
 RETURNS VOID  -- No retorna nada, solo actualiza
 AS $$
@@ -138,15 +138,15 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_auth_register(
-    p_nombre    TEXT,  -- Nombre completo del usuario
-    p_email     TEXT,  -- Correo electrónico (debe ser único)
-    p_telefono  TEXT,  -- Número de teléfono (se convierte a BIGINT internamente)
-    p_hash      TEXT   -- Hash bcrypt ya generado por PHP (NUNCA la contraseña en texto plano)
+    p_nombre    tab_Usuarios.nom_usuario%TYPE,  -- Nombre completo del usuario
+    p_email     tab_Usuarios.correo_usuario%TYPE,  -- Correo electrónico (debe ser único)
+    p_telefono  TEXT,  -- Número de teléfono (se convierte a BIGINT internamente, llega como TEXT desde PHP)
+    p_hash      tab_Usuarios.contra%TYPE   -- Hash bcrypt ya generado por PHP (NUNCA la contraseña en texto plano)
 )
 RETURNS JSON  -- Siempre retorna {ok: bool, msg: string}
 AS $$
 DECLARE
-    v_new_id INTEGER;  -- ID que se asignará al nuevo usuario
+    v_new_id tab_Usuarios.id_usuario%TYPE;  -- ID que se asignará al nuevo usuario
 BEGIN
     -- VALIDACIÓN 1: ¿El email ya existe?
     -- Si alguien ya se registró con este correo, bloqueamos
@@ -168,6 +168,8 @@ BEGIN
 
     -- AUTO-GENERAR ID: Obtiene el máximo ID actual y suma 1
     -- COALESCE maneja el caso de tabla vacía (retorna 0 si no hay registros)
+    -- LOCK previene condición de carrera en generación concurrente de IDs.
+    LOCK TABLE tab_Usuarios IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(u.id_usuario), 0) + 1 INTO v_new_id FROM tab_Usuarios u;
 
     -- INSERCIÓN: Crea el nuevo usuario con valores por defecto seguros
@@ -222,9 +224,9 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_auth_forgot_password(
-    p_email   TEXT,       -- Email del usuario que solicita recuperación
-    p_token   TEXT,       -- Token aleatorio de 64 caracteres (generado por PHP)
-    p_expires TIMESTAMP   -- Fecha y hora de expiración del token
+    p_email   tab_Usuarios.correo_usuario%TYPE,       -- Email del usuario que solicita recuperación
+    p_token   tab_Usuarios.token_recuperacion%TYPE,       -- Token aleatorio de 64 caracteres (generado por PHP)
+    p_expires tab_Usuarios.token_expiracion%TYPE   -- Fecha y hora de expiración del token
 )
 RETURNS JSON  -- JSON con id y nombre del usuario, o NULL si no existe
 AS $$
@@ -279,13 +281,13 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_auth_reset_password(
-    p_token    TEXT,  -- Token de 64 caracteres que vino en la URL
-    p_new_hash TEXT   -- Hash bcrypt de la nueva contraseña (generado por PHP)
+    p_token    tab_Usuarios.token_recuperacion%TYPE,  -- Token de 64 caracteres que vino en la URL
+    p_new_hash tab_Usuarios.contra%TYPE   -- Hash bcrypt de la nueva contraseña (generado por PHP)
 )
 RETURNS JSON  -- Siempre retorna {ok: bool, msg: string}
 AS $$
 DECLARE
-    v_uid INTEGER;  -- ID del usuario que posee este token
+    v_uid tab_Usuarios.id_usuario%TYPE;  -- ID del usuario que posee este token
 BEGIN
     -- BÚSQUEDA: ¿Existe un usuario con este token que NO haya expirado?
     -- NOW() = fecha y hora actual del servidor
@@ -344,7 +346,7 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_auth_get_session(
-    p_uid INTEGER  -- ID del usuario logueado (viene de $_SESSION['user_id'])
+    p_uid tab_Usuarios.id_usuario%TYPE  -- ID del usuario logueado (viene de $_SESSION['user_id'])
 )
 RETURNS JSON  -- JSON con perfil completo del usuario
 AS $$
@@ -402,8 +404,8 @@ $$ LANGUAGE plpgsql STABLE;  -- STABLE porque solo lee datos
 -- ║  de sí/no que no necesita estructura JSON.              ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_sec_check_rate_limit(
-    p_ip     TEXT,              -- Dirección IP del cliente
-    p_action TEXT,              -- Tipo de acción ('login_attempt', 'forgot_password', etc.)
+    p_ip     tab_Rate_Limits.identificador%TYPE,              -- Dirección IP del cliente
+    p_action tab_Rate_Limits.nom_accion%TYPE,              -- Tipo de acción ('login_attempt', 'forgot_password', etc.)
     p_limit  INTEGER DEFAULT 5, -- Máximo de intentos permitidos (por defecto 5)
     p_window INTEGER DEFAULT 15 -- Ventana de tiempo en minutos (por defecto 15)
 )
@@ -446,15 +448,17 @@ $$ LANGUAGE plpgsql STABLE;
 -- ║     verificaciones                                      ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_sec_log_attempt(
-    p_ip     TEXT,  -- IP del cliente que falló
-    p_action TEXT   -- Tipo de acción que falló
+    p_ip     tab_Rate_Limits.identificador%TYPE,  -- IP del cliente que falló
+    p_action tab_Rate_Limits.nom_accion%TYPE   -- Tipo de acción que falló
 )
 RETURNS VOID
 AS $$
 DECLARE
-    v_new_id INTEGER;
+    v_new_id tab_Rate_Limits.id_rate_limit%TYPE;
 BEGIN
     -- Auto-generar ID siguiendo el patrón del proyecto (sin SERIAL)
+    -- LOCK previene condición de carrera en generación concurrente de IDs.
+    LOCK TABLE tab_Rate_Limits IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_rate_limit), 0) + 1 INTO v_new_id FROM tab_Rate_Limits;
 
     INSERT INTO tab_Rate_Limits (
@@ -491,8 +495,8 @@ $$ LANGUAGE plpgsql;
 -- ║  análisis temporales más detallados si se necesitan.    ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_sec_clear_attempts(
-    p_ip     TEXT,  -- IP del cliente que tuvo éxito
-    p_action TEXT   -- Acción que tuvo éxito
+    p_ip     tab_Rate_Limits.identificador%TYPE,  -- IP del cliente que tuvo éxito
+    p_action tab_Rate_Limits.nom_accion%TYPE   -- Acción que tuvo éxito
 )
 RETURNS VOID
 AS $$
