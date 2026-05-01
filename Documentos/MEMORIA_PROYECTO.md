@@ -1,4 +1,4 @@
-x# 🧠 Memoria del Proyecto - RD_WATCH
+# 🧠 Memoria del Proyecto - RD_WATCH
 
 Este documento mantiene un registro persistente del contexto, decisiones globales, problemas y estado actual del ecosistema RD_WATCH. Al iniciar cualquier sesión, este es el primer archivo que debe consultarse.
 
@@ -23,6 +23,7 @@ Este documento mantiene un registro persistente del contexto, decisiones globale
 - **Optimización de Rendimiento API (24/04/2026):** Se eliminó la doble serialización JSON redundante (`json_decode` + `json_encode`) en toda la capa de backend. Ahora las APIs PHP imprimen directamente el string JSON retornado por PostgreSQL, minimizando el uso de CPU y RAM del servidor.
 - **Estandarización de Respuestas HTTP (24/04/2026):** Se implementaron códigos de estado HTTP estándar (ej: `400 Bad Request` para errores de validación) en lugar de retornar siempre `200 OK`. Esto permite que el frontend (Axios/Fetch) maneje las excepciones de red de forma nativa y robusta.
 - **Rate Limits y Control de Citas (28/04/2026):** Se implementó control en solicitudes de citas del taller. El usuario puede solicitar **24/7**, pero las restricciones aplican a la **fecha seleccionada**: no domingos, mínimo 2 días de anticipación, máx 10 citas por fecha. Rate limits por cliente: 1/día y 2/semana (por fecha de creación). Cancelación solo con 1 día de anticipación (clientes; admins sin restricción). Validación en 3 capas: PostgreSQL (autoritativa), PHP (anticipada) y Frontend (UX). Zona horaria forzada a `America/Bogota`. Solo citas `pendiente`/`confirmada` consumen cuota. Se usa `COUNT(1)` por estándar del proyecto.
+- **Arquitectura Ocultación Total (30/04/2026):** Se documentó formalmente el principio de "Ocultación Total" donde PHP actúa como un proxy ciego (sin acceso directo a tablas ni columnas) y PostgreSQL maneja toda la lógica transaccional vía PL/pgSQL. Se consolidaron y documentaron los mecanismos de seguridad de las tres capas (Anti-XSS, CSRF, Prepared Statements nativos, Rate Limiting y auditoría automática con soft-deletes).
 
 
 ## ⚠️ 4. Limitaciones Técnicas Conocidas
@@ -51,10 +52,9 @@ Este documento mantiene un registro persistente del contexto, decisiones globale
 - [x] **Fix Soft-Delete Marcas/Servicios (24/04/2026):** Se corrigió el error de parámetros faltantes en las llamadas PHP a `fn_cat_delete_marca` y `fn_cat_delete_servicio`.
 - [x] **UI Productos Agotados (24/04/2026):** Implementación de feedback visual en el comercio para productos sin stock: etiqueta "Agotado", opacidad/escala de grises, y bloqueo de botones de compra.
 - [x] **UI Factura (24/04/2026):** Conversión del botón de contacto urgente en la factura a un elemento gráfico estático (span no interactivo).
-
 - [x] **Refactorización `%TYPE` (23/04/2026):** Se aplicó el atributo `%TYPE` a más de 60 funciones PL/pgSQL en los 5 módulos principales (`admin_reports.sql`, `auth_security.sql`, `catalog_master.sql`, `client_panel.sql`, `ecommerce_core.sql`) asegurando resiliencia ante cambios de esquema futuros.
-
-- [x] **Rate Limits de Citas (28/04/2026):** Implementado control completo de frecuencia y horario en `fn_citas_create` (7 validaciones) y cancelación anticipada en `fn_citas_update_status`. Validación duplicada en `citas.php` (PHP). Frontend actualizado con banner informativo y selector de fecha con mínimo +2 días. **Consolidación:** Las funciones actualizadas se integraron definitivamente en `sql/logica_backend/ecommerce_core.sql` para nuevas instalaciones. El script `sql/scripts/migrate_citas_limits.sql` quedó como utilidad de parcheo.
+- [x] **Rate Limits de Citas (28/04/2026):** Implementado control completo de frecuencia y horario en `fn_citas_create` (7 validaciones) y cancelación anticipada en `fn_citas_update_status`. Validación duplicada en `citas.php` (PHP). Frontend actualizado con banner informativo y selector de fecha con mínimo +2 días.
+- [x] **Documentación Técnica Oficial (30/04/2026):** Se generó el documento exhaustivo de Arquitectura, Seguridad y Flujo de Datos del proyecto en Markdown y Word para futuras auditorías. Se actualizó el archivo `.gitignore` para preparar el despliegue a GitHub excluyendo archivos temporales y comprobantes locales.
 
 ---
-*Última edición técnica: Lunes 28 Abril 2026 — Rate Limits y Horario de Atención para Citas/Servicios*
+*Última edición técnica: Jueves 30 Abril 2026 — Documentación Oficial y Preparación para Despliegue*

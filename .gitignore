@@ -13,11 +13,24 @@ composer.phar
 # Archivos de SO
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Temporales IDE
 .idea/
 .vscode/
 *.swp
+*.bak
+*.tmp
 
 # Archivos de pruebas locales
 test_*.php
+scratch/
+
+# Comprobantes subidos por los usuarios locales (para que la app corra limpia)
+src/comprobantes/*
+!src/comprobantes/.gitkeep
+
+# Archivos ofimáticos y binarios pesados (opcional, si quieres ignorar reportes de word generados)
+# *.docx
+# *.xlsx
+# *.pdf
