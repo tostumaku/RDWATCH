@@ -36,13 +36,13 @@ CREATE TABLE IF NOT EXISTS tab_Usuarios
     id_usuario              SMALLINT NOT NULL,            -- Identificador único del usuario
     nom_usuario             VARCHAR(100) NOT NULL,        -- Nombre completo del usuario
     correo_usuario          VARCHAR(100) NOT NULL,        -- Correo electrónico del usuario
-    num_telefono_usuario    BIGINT NOT NULL CHECK (LENGTH(CAST(num_telefono_usuario AS TEXT)) = 10), -- Número de teléfono (10 dígitos)
+    num_telefono_usuario    BIGINT NOT NULL,              -- Número de teléfono (10 dígitos)
     direccion_principal     VARCHAR(255),                 -- Dirección del usuario
     fecha_registro          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Fecha y hora de creación de la cuenta
     activo                  BOOLEAN NOT NULL DEFAULT TRUE, -- Indica si la cuenta está habilitada para su uso
     contra                  VARCHAR(255) NOT NULL,         -- Hash de contraseña (Bcrypt)
-    rol                     VARCHAR(20) NOT NULL DEFAULT 'cliente',-- Rol del usuario
-    
+    rol                     VARCHAR(20) NOT NULL DEFAULT 'cliente', -- Rol del usuario
+
     salt                    VARCHAR(255),                  -- Sal criptográfica para el hash de la contraseña
     intentos_fallidos       SMALLINT NOT NULL DEFAULT 0,   -- Contador de intentos de login erróneos
     bloqueado               BOOLEAN NOT NULL DEFAULT FALSE,-- Bloqueo temporal por seguridad (fuerza bruta)
@@ -60,7 +60,10 @@ CREATE TABLE IF NOT EXISTS tab_Usuarios
     fec_delete              TIMESTAMP,                     -- Fecha del borrado lógico
 
     PRIMARY KEY (id_usuario),
-    UNIQUE (correo_usuario)
+    UNIQUE (correo_usuario),
+    CHECK (LENGTH(CAST(num_telefono_usuario AS TEXT)) = 10), -- Teléfono debe tener exactamente 10 dígitos
+    CHECK (rol IN ('admin', 'cliente')),                    -- Roles válidos del sistema
+    CHECK (intentos_fallidos >= 0)                          -- No puede ser negativo
 );
 
 
@@ -210,7 +213,8 @@ CREATE TABLE IF NOT EXISTS tab_Contacto
     fec_delete TIMESTAMP,
 
     PRIMARY KEY (id_contacto),
-    CHECK (estado IN ('pendiente', 'en proceso', 'resuelto', 'cerrado')) -- Estado del mensaje
+    CHECK (telefono_remitente > 0),                                        -- Teléfono debe ser positivo
+    CHECK (estado IN ('pendiente', 'en proceso', 'resuelto', 'cerrado'))   -- Estados válidos del mensaje
 );
 
 
@@ -452,8 +456,9 @@ CREATE TABLE IF NOT EXISTS tab_Facturas (
     usr_delete VARCHAR(100),
     fec_delete TIMESTAMP,
     PRIMARY KEY (id_factura),
-    FOREIGN KEY (id_orden) REFERENCES tab_Orden(id_orden), -- Relación con la tabla de Órdenes
-    FOREIGN KEY (id_usuario) REFERENCES tab_Usuarios(id_usuario) -- Relación con la tabla de Usuarios
+    FOREIGN KEY (id_orden) REFERENCES tab_Orden(id_orden),
+    FOREIGN KEY (id_usuario) REFERENCES tab_Usuarios(id_usuario),
+    CHECK (total_factura >= 0) -- El total de la factura no puede ser negativo
 );
 CREATE INDEX idx_factura_orden ON tab_Facturas (id_orden);
 CREATE INDEX idx_factura_usuario ON tab_Facturas (id_usuario);
@@ -465,9 +470,9 @@ CREATE TABLE IF NOT EXISTS tab_Detalle_Factura (
     id_detalle_factura    INTEGER NOT NULL, -- Clave primaria del detalle de factura
     id_factura            INTEGER NOT NULL,              -- ID de la factura a la que pertenece este detalle
     id_producto           SMALLINT NOT NULL,             -- ID del producto incluido en este detalle
-    cantidad              SMALLINT NOT NULL,                -- Cantidad del producto
-    precio_unitario       DECIMAL(15, 2) NOT NULL, -- Precio del producto al momento de la facturación
-    subtotal_linea        DECIMAL(15, 2) NOT NULL, -- Subtotal para esta línea
+    cantidad              SMALLINT NOT NULL,        -- Cantidad del producto
+    precio_unitario       DECIMAL(15, 2) NOT NULL,  -- Precio del producto al momento de la facturación
+    subtotal_linea        DECIMAL(15, 2) NOT NULL,  -- Subtotal para esta línea
 
     -- Columnas de auditoría
     usr_insert VARCHAR(100),
@@ -478,10 +483,12 @@ CREATE TABLE IF NOT EXISTS tab_Detalle_Factura (
     fec_delete TIMESTAMP,
 
     PRIMARY KEY (id_detalle_factura),
-    UNIQUE (id_factura, id_producto), -- Un producto solo puede aparecer una vez por factura
-    FOREIGN KEY (id_factura) REFERENCES tab_Facturas(id_factura), -- Relación con la tabla de Facturas
-    FOREIGN KEY (id_producto) REFERENCES tab_Productos(id_producto), -- Relación con la tabla de Productos
-    CHECK (cantidad > 0) -- Cantidad del producto
+    UNIQUE (id_factura, id_producto),
+    FOREIGN KEY (id_factura) REFERENCES tab_Facturas(id_factura),
+    FOREIGN KEY (id_producto) REFERENCES tab_Productos(id_producto),
+    CHECK (cantidad > 0),          -- La cantidad debe ser al menos 1
+    CHECK (precio_unitario >= 0),  -- El precio no puede ser negativo
+    CHECK (subtotal_linea >= 0)    -- El subtotal no puede ser negativo
 );
 CREATE INDEX idx_detalle_factura_factura ON tab_Detalle_Factura (id_factura);
 CREATE INDEX idx_detalle_factura_producto ON tab_Detalle_Factura (id_producto);
@@ -588,7 +595,7 @@ CREATE TABLE IF NOT EXISTS tab_Reservas
     fecha_reserva           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Fecha real de creación
     fecha_preferida         DATE, -- (NUEVO) Fecha en la que el cliente desea el servicio
     notas_cliente           TEXT, -- (NUEVO) Notas adicionales del cliente
-    prioridad               VARCHAR(20) DEFAULT 'normal', -- (NUEVO) Prioridad (normal, alta)
+    prioridad               VARCHAR(20) DEFAULT 'normal', -- Prioridad de la reserva (normal, alta, baja)
     estado_reserva          VARCHAR(50) DEFAULT 'pendiente', -- Estado (pendiente, confirmada, etc.)
 
     -- Columnas de auditoría
@@ -602,7 +609,8 @@ CREATE TABLE IF NOT EXISTS tab_Reservas
     PRIMARY KEY (id_reserva),
     FOREIGN KEY (id_usuario) REFERENCES tab_Usuarios(id_usuario),
     FOREIGN KEY (id_servicio) REFERENCES tab_Servicios(id_servicio),
-    CHECK (estado_reserva IN ('pendiente', 'confirmada', 'cancelada', 'completada'))
+    CHECK (prioridad IN ('normal', 'alta', 'baja')),                                   -- Prioridades válidas
+    CHECK (estado_reserva IN ('pendiente', 'confirmada', 'cancelada', 'completada'))   -- Estados válidos
 );
 
 -- (Mover PK de tab_Opiniones fuera si es necesario, pero aquí se ajusta la definición)
