@@ -10,7 +10,7 @@ Este documento mantiene un registro persistente del contexto, decisiones globale
 
 ## 🏗️ 2. Stack Tecnológico Estructurado
 - **Backend:** PHP. Integración de APIs alojadas en `src/backend/` controlando inventario, envíos y autenticación.
-- **Frontend:** Vanilla Javascript + DOM Manipulation (`src/js/script.js`), CSS modular por archivo (`style.css`).
+- **Frontend:** Vanilla Javascript Modular (`utils.js`, `auth.js`, `shop.js`, `cart.js`, `checkout.js`, `landing.js`), CSS modular por archivo (`style.css`).
 - **Base de Datos:** PostgreSQL. BD real se llama **`db_rdwatch`** (no `rdwatch`). Sistema de inicialización gestionado desde `install_db.bat`.
 
 ## 📜 3. Decisiones y Patrones Implementados
@@ -25,6 +25,9 @@ Este documento mantiene un registro persistente del contexto, decisiones globale
 - **Rate Limits y Control de Citas (28/04/2026):** Se implementó control en solicitudes de citas del taller. El usuario puede solicitar **24/7**, pero las restricciones aplican a la **fecha seleccionada**: no domingos, mínimo 2 días de anticipación, máx 10 citas por fecha. Rate limits por cliente: 1/día y 2/semana (por fecha de creación). Cancelación solo con 1 día de anticipación (clientes; admins sin restricción). Validación en 3 capas: PostgreSQL (autoritativa), PHP (anticipada) y Frontend (UX). Zona horaria forzada a `America/Bogota`. Solo citas `pendiente`/`confirmada` consumen cuota. Se usa `COUNT(1)` por estándar del proyecto.
 - **Arquitectura Ocultación Total (30/04/2026):** Se documentó formalmente el principio de "Ocultación Total" donde PHP actúa como un proxy ciego (sin acceso directo a tablas ni columnas) y PostgreSQL maneja toda la lógica transaccional vía PL/pgSQL. Se consolidaron y documentaron los mecanismos de seguridad de las tres capas (Anti-XSS, CSRF, Prepared Statements nativos, Rate Limiting y auditoría automática con soft-deletes).
 - **Integridad de Datos con CHECK Constraints (04/05/2026):** Se auditó el schema completo `database_rdwatch_3_0.sql` y se agregaron **7 nuevos CHECKs** (de 22 originales a 29 totales) a nivel de tabla (`table-level`, al final del `CREATE TABLE`). Nuevos CHECKs: `tab_Usuarios.rol IN ('admin','cliente')`, `tab_Usuarios.intentos_fallidos >= 0`, `tab_Contacto.telefono_remitente > 0`, `tab_Facturas.total_factura >= 0`, `tab_Detalle_Factura.precio_unitario >= 0`, `tab_Detalle_Factura.subtotal_linea >= 0`, `tab_Reservas.prioridad IN ('normal','alta','baja')`. **Estándar adoptado:** todos los CHECKs deben declararse como `table-level` al final del bloque `CREATE TABLE`, nunca inline en la columna. Los CHECKs validan dominios de enumeraciones, rangos numéricos no negativos y formatos de campos críticos. Todos fueron verificados contra las funciones PL/pgSQL y los archivos PHP para garantizar que no haya conflictos con los valores reales insertados por el sistema.
+- **Arquitectura de Software Documentada (06/05/2026):** Se creó un diagrama interactivo SVG (`arquitectura_rdwatch.html`) que expone la arquitectura estricta en 3 capas de RD_WATCH: Frontend (Vanilla JS sin frameworks pesados), Backend (PHP Puro como proxy ciego) y PostgreSQL (capa lógica transaccional). Además, se consolidaron los argumentos de la ventaja competitiva para presentaciones técnicas (Rendimiento Nativo vs React, y Sesiones HttpOnly seguras vs JWT en localStorage).
+- **Eliminación de Bloqueos Explícitos (06/05/2026):** Se retiraron las sentencias `LOCK TABLE ... IN EXCLUSIVE MODE` de las 15 funciones PL/pgSQL transaccionales (`ecommerce_core.sql`, `auth_security.sql`, `client_panel.sql`) que manejan la autogeneración de IDs (`MAX() + 1`). Esto permite un funcionamiento fluido sin bloqueos de tabla completos.
+- **Refactorización Modular del Frontend (08/05/2026):** Se descompuso el archivo monolítico `script.js` (2000+ líneas) en 6 módulos funcionales independientes (`utils.js`, `auth.js`, `shop.js`, `cart.js`, `checkout.js`, `landing.js`). Se eliminó código duplicado (Google Auth y Menú Móvil) y se optimizó la carga de recursos, donde cada página HTML solo importa los módulos necesarios. Se mantuvo el uso de "Scripts Tradicionales" con carga `defer` para compatibilidad, exponiendo puentes globales controlados en `window`.
 
 
 ## ⚠️ 4. Limitaciones Técnicas Conocidas
@@ -57,6 +60,20 @@ Este documento mantiene un registro persistente del contexto, decisiones globale
 - [x] **Rate Limits de Citas (28/04/2026):** Implementado control completo de frecuencia y horario en `fn_citas_create` (7 validaciones) y cancelación anticipada en `fn_citas_update_status`. Validación duplicada en `citas.php` (PHP). Frontend actualizado con banner informativo y selector de fecha con mínimo +2 días.
 - [x] **Documentación Técnica Oficial (30/04/2026):** Se generó el documento exhaustivo de Arquitectura, Seguridad y Flujo de Datos del proyecto en Markdown y Word para futuras auditorías. Se actualizó el archivo `.gitignore` para preparar el despliegue a GitHub excluyendo archivos temporales y comprobantes locales.
 - [x] **CHECK Constraints en Schema (04/05/2026):** Auditoría completa del schema `database_rdwatch_3_0.sql`. Se agregaron 7 CHECKs nuevos (total: 29). Se estandarizó la posición de todos los CHECKs como `table-level` al final del `CREATE TABLE` (ninguno inline en columna). Se eliminó el único duplicado detectado (`cantidad > 0` en `tab_Detalle_Factura` que existía tanto inline como al final).
+- [x] **Material de Presentación (06/05/2026):** Creación del diagrama de arquitectura general y estructuración argumentativa técnica para las diapositivas de Frontend (experiencia Vanilla JS) y Peticiones HTTP (seguridad de sesiones nativas).
+- [x] **Eliminación de LOCK TABLE (06/05/2026):** Auditoría y retiro de las 15 sentencias `LOCK TABLE` del código SQL base, liberando la capa de persistencia de bloqueos pesados.
+- [x] **Fix Errores Panel Admin (06/05/2026):** Se resolvieron las excepciones SQLSTATE al intentar eliminar entidades en el panel. En `categorias.php` se corrigió la falta del segundo parámetro audit (`admin_panel`) requerido por `fn_cat_delete_categoria`. En `servicios.php` se corrigió el type casting a `?::SMALLINT` en `fn_cat_delete_servicio` coincidiendo exactamente con su firma PL/pgSQL. 
+- [x] **UI Modal de Productos (06/05/2026):** Arreglado el desbordamiento visual de los `<select>` y campos de texto en el popup de creación de productos. Se forzó `width: 100%` y `box-sizing: border-box` a los inputs en `admin.css`.
+- [x] **Refactorización de script.js (08/05/2026):** Modularización completa del frontend. Se dividió el monolito en 6 archivos, se eliminó la duplicidad de Google Auth y menú móvil, y se actualizaron todas las referencias HTML (`index`, `comercio`, `factura`, `admin`, `legal`).
 
 ---
-*Última edición técnica: Domingo 04 Mayo 2026 — Auditoría y estandarización de CHECK constraints en el schema de base de datos*
+
+## 🔮 6. Futuras Mejoras y Escalabilidad
+- **Integración de Chatbot con IA (Propuesta 08/05/2026):** Se evaluó la viabilidad de integrar un asistente virtual inteligente.
+    - **Viabilidad:** Alta, debido a la arquitectura de "Ocultación Total" donde la lógica reside en funciones PL/pgSQL que retornan JSON.
+    - **Funcionalidad:** Interacción para consulta de catálogo, estado de servicios técnicos (`fn_citas_list_cliente`), seguimiento de pedidos (`fn_orders_list`) e información general.
+    - **Stack Propuesto:** Gemini API / OpenAI API mediante un proxy en PHP (`chatbot.php`) para mantener la seguridad y el flujo de 3 capas.
+    - **Beneficio:** Atención 24/7 y experiencia de usuario premium (Concierge Digital).
+
+---
+*Última edición técnica: Viernes 08 Mayo 2026 — Refactorización modular del frontend y actualización de arquitectura.*
