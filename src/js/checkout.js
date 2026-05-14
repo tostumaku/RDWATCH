@@ -117,6 +117,27 @@ async function cargarDepartamentosCheckout() {
                         }
                     }
                 });
+
+                // ── PRE-SELECCIONAR DIRECCIÓN GUARDADA ──
+                // Tras cargar las opciones del select, verificamos si el usuario
+                // tiene una dirección guardada en sessionStorage (puesta por me.php → auth.js).
+                try {
+                    const userData = JSON.parse(sessionStorage.getItem('user'));
+                    if (userData && userData.id_departamento) {
+                        selectDepto.value = userData.id_departamento;
+                        // Cargar ciudades y pre-seleccionar la ciudad guardada
+                        if (userData.ciudad) {
+                            await cargarCiudadesCheckoutPorDepto(userData.id_departamento);
+                            const selectCiudad = document.getElementById('shipping-city');
+                            if (selectCiudad) selectCiudad.value = userData.ciudad;
+                        }
+                        // Pre-llenar dirección si no fue llenada por auth.js
+                        const addrInput = document.getElementById('shipping-address');
+                        if (addrInput && !addrInput.value && userData.direccion) {
+                            addrInput.value = userData.direccion;
+                        }
+                    }
+                } catch (e) { /* sessionStorage vacío o inválido, no hacer nada */ }
             }
         }
     } catch (error) {

@@ -36,13 +36,15 @@ async function checkSession() {
             currentUser = data.user;
             updateHeaderUser(data.user);
 
-            // Auto-rellenar campos de envío si estamos en checkout
+            // Auto-rellenar campo de dirección si estamos en checkout
+            // NOTA: El select de ciudad se pre-selecciona desde checkout.js
+            // después de cargar las opciones dinámicas (evita race condition).
             const addrInput = document.getElementById('shipping-address');
-            const cityInput = document.getElementById('shipping-city');
             if (addrInput && !addrInput.value) addrInput.value = data.user.direccion || '';
-            if (cityInput && !cityInput.value) cityInput.value = data.user.ciudad || '';
 
             // Guardar en sessionStorage para acceso rápido
+            // Incluye departamento y id_departamento para que checkout.js
+            // pueda pre-seleccionar los selects después de cargar opciones.
             sessionStorage.setItem('user', JSON.stringify(data.user));
         } else {
             sessionStorage.removeItem('user');
