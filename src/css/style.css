@@ -3199,8 +3199,13 @@ section {
 /* Sección de Checkout */
 .checkout-section {
     padding: var(--spacing-lg) 0;
-    background-color: var(--white);
+    background-color: #ffffff !important;
 }
+
+.checkout-container {
+    background-color: #ffffff !important;
+}
+
 
 .hidden-section {
     display: none;
@@ -3215,18 +3220,104 @@ section {
 
 .checkout-form-col {
     padding: var(--spacing-md);
-    background-color: var(--bg-light);
-    border-radius: 8px;
-    box-shadow: var(--shadow-sm);
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border: 1px solid rgba(175, 148, 79, 0.12);
 }
 
 .checkout-form-col h3 {
     color: var(--primary-dark);
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     margin-top: var(--spacing-md);
     margin-bottom: var(--spacing-md);
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid rgba(175, 148, 79, 0.2);
     padding-bottom: var(--spacing-sm);
+}
+
+/* Inputs dentro del checkout: fondo blanco, borde sutil */
+.checkout-form-col input,
+.checkout-form-col select,
+.checkout-form-col textarea {
+    background-color: #ffffff !important;
+    border: 1px solid #ddd !important;
+    color: var(--text-color) !important;
+    border-radius: 8px;
+    padding: 12px;
+    width: 100%;
+}
+
+.checkout-form-col input:focus,
+.checkout-form-col select:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(175, 148, 79, 0.12) !important;
+    outline: none;
+}
+
+/* ============================================================
+   OVERRIDE: contact-form dentro del checkout (fondo claro)
+   Neutraliza los estilos oscuros de la sección de contacto
+   ============================================================ */
+.checkout-form-col .contact-form {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.checkout-form-col .contact-form h3 {
+    color: var(--primary-dark) !important;
+    margin-bottom: var(--spacing-md) !important;
+    font-size: 1.2rem !important;
+}
+
+.checkout-form-col .contact-form label {
+    color: var(--text-color) !important;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+}
+
+.checkout-form-col .contact-form input,
+.checkout-form-col .contact-form select,
+.checkout-form-col .contact-form textarea {
+    background: #ffffff !important;
+    border: 1px solid #ddd !important;
+    color: var(--text-color) !important;
+    padding: 12px 14px !important;
+}
+
+.checkout-form-col .contact-form input::placeholder,
+.checkout-form-col .contact-form textarea::placeholder {
+    color: #aaa !important;
+}
+
+.checkout-form-col .contact-form input:focus,
+.checkout-form-col .contact-form select:focus,
+.checkout-form-col .contact-form textarea:focus {
+    background: #fff !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(175, 148, 79, 0.12) !important;
+}
+
+/* Labels normales fuera del contact-form dentro del checkout */
+.checkout-form-col label {
+    color: var(--text-color) !important;
+}
+
+/* Texto pequeño (tamaño máximo recomendado, etc.) */
+.checkout-form-col small {
+    color: var(--text-lighter) !important;
+    font-size: 0.8rem;
+}
+
+/* Párrafos dentro del checkout deben verse oscuros */
+.checkout-form-col p,
+.checkout-form-col li {
+    color: var(--text-color) !important;
 }
 
 .payment-methods {

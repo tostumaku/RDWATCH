@@ -80,8 +80,8 @@ try {
             // fn_user_get_orders retorna array ordenado DESC
             $stmt = $pdo->prepare("SELECT fn_user_get_orders(?)");
             $stmt->execute([$uid]);
-            $pedidos = json_decode($stmt->fetchColumn(), true);
-            echo json_encode(['ok' => true, 'data' => $pedidos]);
+            $json = $stmt->fetchColumn() ?: '[]';
+            echo '{"ok":true,"data":' . $json . '}';
 
         }
         elseif ($action === 'resumen') {
@@ -90,8 +90,8 @@ try {
             // Antes: 3 queries PHP → Ahora: 1 función PG
             $stmt = $pdo->prepare("SELECT fn_user_get_dashboard(?)");
             $stmt->execute([$uid]);
-            $dashboard = json_decode($stmt->fetchColumn(), true);
-            echo json_encode(['ok' => true, 'data' => $dashboard]);
+            $json = $stmt->fetchColumn() ?: '[]';
+            echo '{"ok":true,"data":' . $json . '}';
 
         }
         else {
@@ -126,7 +126,8 @@ try {
             // Consulta 100% opaca
             $stmt = $pdo->prepare("SELECT fn_user_update_profile(?, ?, ?, ?)");
             $stmt->execute([$uid, $nombre, $email, $telefono]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
 
         }
         elseif ($action === 'update_address' && $uid) {
@@ -146,7 +147,8 @@ try {
             // Consulta 100% opaca
             $stmt = $pdo->prepare("SELECT fn_user_update_address(?, ?, ?, ?)");
             $stmt->execute([$uid, $direccion, $ciudad_id, $postal]);
-            echo json_encode(json_decode($stmt->fetchColumn(), true));
+            $jsonResponse = $stmt->fetchColumn();
+            echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
 
         }
         else {

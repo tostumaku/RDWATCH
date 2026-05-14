@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
   <link rel="stylesheet" href="../css/style.css" />
-  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="admin.css?v=6" />
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -137,7 +137,8 @@
               <th>Precio</th>
               <th>Stock</th>
               <th>Marca</th>
-              <th>Acciones</th>
+              <th>Estado</th>
+              <th class="actions-header">Acciones</th>
             </tr>
           </thead>
           <tbody id="tbodyProductos"></tbody>
@@ -243,7 +244,7 @@
         <p class="section-subheading">Administra categorías y subcategorías de productos</p>
       </div>
 
-      <div class="grid-2">
+      <div class="cats-layout">
         <!-- Categorías -->
         <div class="card">
           <h3 class="card-title"><i class="fas fa-layer-group"></i> Categorías</h3>
@@ -260,7 +261,7 @@
                 <tr>
                   <th>ID</th>
                   <th>Nombre</th>
-                  <th>Estado</th> <!-- NUEVO -->
+                  <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -440,6 +441,7 @@
               <th>Nombre</th>
               <th>Precio</th>
               <th>Duración</th>
+              <th>Estado</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -505,7 +507,7 @@
               <th>Fecha Preferida</th>
               <th>Prioridad</th>
               <th>Estado</th>
-              <th>Foto</th>
+              <th>Notas</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -547,6 +549,28 @@
 
   <div class="modal-overlay" id="modalOverlay"></div>
 
+  <!-- Modal Detalle de Pedido -->
+  <div id="modalDetallePedido" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" data-close="#modalDetallePedido"><i class="fas fa-times"></i></span>
+      <h3 class="modal-title"><i class="fas fa-box-open"></i> Detalles del Pedido</h3>
+      
+      <div style="margin-bottom: 1rem;">
+        <p><strong>Cliente:</strong> <span id="detallePedidoCliente"></span></p>
+        <p><strong>Email:</strong> <span id="detallePedidoEmail"></span></p>
+        <p><strong>Teléfono:</strong> <span id="detallePedidoTelefono"></span></p>
+        <hr style="margin: 10px 0;">
+        <p><strong>Dirección de Envío:</strong> <span id="detallePedidoDireccion"></span></p>
+        <p><strong>Ciudad:</strong> <span id="detallePedidoCiudad"></span></p>
+        <p><strong>Departamento:</strong> <span id="detallePedidoDepartamento"></span></p>
+      </div>
+
+      <div class="modal-actions" style="justify-content: flex-end;">
+        <button type="button" class="button button-outline" data-close="#modalDetallePedido">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Alerta (NUEVO: Para mensajes críticos y de error) -->
   <div class="modal" id="modalAlerta">
     <div class="modal-content" style="max-width:400px; text-align:center;">
@@ -563,8 +587,8 @@
   <script src="../js/config.js"></script>
   <script src="../js/notifications.js"></script>
   <script src="../js/security.js"></script>
-  <script src="../js/script.js"></script>
-  <script src="admin.js"></script>
+  <script src="../js/utils.js"></script>
+  <script src="admin.js?v=5"></script>
 </body>
 
 </html>

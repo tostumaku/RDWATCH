@@ -74,7 +74,7 @@
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_user_get_profile(
-    p_user_id INTEGER  -- Identificador único del usuario
+    p_user_id tab_Usuarios.id_usuario%TYPE  -- Identificador único del usuario
 )
 RETURNS JSON
 AS $$
@@ -82,6 +82,9 @@ DECLARE
     v_result JSON; -- Contenedor de salida
 BEGIN
     -- Selección estructurada de atributos no sensibles.
+    -- JOIN con Direcciones_Envio → Ciudades → Departamentos para
+    -- devolver la dirección completa con datos geográficos,
+    -- permitiendo al frontend pre-seleccionar los dropdowns.
     SELECT row_to_json(t) INTO v_result FROM (
         SELECT
             u.id_usuario,
@@ -90,9 +93,23 @@ BEGIN
             u.num_telefono_usuario,
             u.direccion_principal,
             u.activo,
-            u.fecha_registro
+            u.fecha_registro,
+            -- Datos de la dirección predeterminada (si existe)
+            d.direccion_completa,
+            c.id_ciudad,
+            c.nombre_ciudad,
+            c.codigo_postal,
+            dep.id_departamento,
+            dep.nombre_departamento
         FROM tab_Usuarios u
+        LEFT JOIN tab_Direcciones_Envio d
+            ON u.id_usuario = d.id_usuario AND d.es_predeterminada = TRUE
+        LEFT JOIN tab_Ciudades c
+            ON d.id_ciudad = c.id_ciudad
+        LEFT JOIN tab_Departamentos dep
+            ON c.id_departamento = dep.id_departamento
         WHERE u.id_usuario = p_user_id -- Filtro de propiedad única
+        LIMIT 1
     ) t;
 
     -- Validación de existencia previa al retorno.
@@ -125,7 +142,7 @@ $$ LANGUAGE plpgsql STABLE;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_user_get_orders(
-    p_user_id INTEGER -- ID del usuario autenticado
+    p_user_id tab_Usuarios.id_usuario%TYPE -- ID del usuario autenticado
 )
 RETURNS JSON
 AS $$
@@ -137,7 +154,7 @@ BEGIN
         SELECT
             o.id_orden,             -- Referencia de la transacción
             o.concepto,             -- Glosa descriptiva
-            o.fecha_orden AS fecha, -- Instante del pedido
+            TO_CHAR(o.fecha_orden, 'YYYY-MM-DD HH24:MI:SS') AS fecha, -- Instante del pedido (sin milisegundos)
             o.total_orden,          -- Monto final pagado
             o.estado_orden          -- Situación (pendiente/entregado/etc)
         FROM tab_Orden o
@@ -170,7 +187,7 @@ $$ LANGUAGE plpgsql STABLE;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_user_get_dashboard(
-    p_user_id INTEGER -- Ámbito del dashboard
+    p_user_id tab_Usuarios.id_usuario%TYPE -- Ámbito del dashboard
 )
 RETURNS JSON
 AS $$
@@ -228,10 +245,10 @@ $$ LANGUAGE plpgsql STABLE;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_user_update_profile(
-    p_user_id  INTEGER,  -- ID del usuario actual
-    p_nombre   TEXT,    -- Nuevo nombre/alias
-    p_email    TEXT,    -- Nuevo correo electrónico
-    p_telefono TEXT     -- Nuevo número telefónico
+    p_user_id  tab_Usuarios.id_usuario%TYPE,  -- ID del usuario actual
+    p_nombre   tab_Usuarios.nom_usuario%TYPE,    -- Nuevo nombre/alias
+    p_email    tab_Usuarios.correo_usuario%TYPE,    -- Nuevo correo electrónico
+    p_telefono TEXT     -- Nuevo número telefónico (TEXT desde PHP, cast interno)
 )
 RETURNS JSON
 AS $$
@@ -281,16 +298,16 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_user_update_address(
-    p_user_id   INTEGER,  -- Propietario de la dirección
-    p_direccion TEXT,    -- Texto completo del domicilio
-    p_ciudad_id INTEGER, -- Enlace al catálogo de ciudades
-    p_postal    TEXT     -- Código postal
+    p_user_id   tab_Usuarios.id_usuario%TYPE,  -- Propietario de la dirección
+    p_direccion tab_Direcciones_Envio.direccion_completa%TYPE,    -- Texto completo del domicilio
+    p_ciudad_id tab_Ciudades.id_ciudad%TYPE, -- Enlace al catálogo de ciudades
+    p_postal    tab_Direcciones_Envio.codigo_postal%TYPE     -- Código postal
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_existing_id INTEGER; -- Puntero a dirección encontrada
-    v_new_id      INTEGER; -- Generador de ID para nueva dirección
+    v_existing_id tab_Direcciones_Envio.id_direccion%TYPE; -- Puntero a dirección encontrada
+    v_new_id      tab_Direcciones_Envio.id_direccion%TYPE; -- Generador de ID para nueva dirección
 BEGIN
     -- PASO 1: Sincronización del Perfil Maestro (Update rápido).
     UPDATE tab_Usuarios
@@ -405,8 +422,8 @@ $$ LANGUAGE plpgsql STABLE;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_reviews_check_dup(
-    p_user_id    INTEGER, -- El autor del comentario
-    p_comentario TEXT    -- El cuerpo del mensaje
+    p_user_id    tab_Usuarios.id_usuario%TYPE, -- El autor del comentario
+    p_comentario tab_Opiniones.comentario%TYPE    -- El cuerpo del mensaje
 )
 RETURNS BOOLEAN
 AS $$
@@ -441,14 +458,14 @@ $$ LANGUAGE plpgsql STABLE;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_reviews_create(
-    p_user_id     INTEGER,   -- Identidad del autor
-    p_calificacion SMALLINT, -- Escala numérica de satisfacción
-    p_comentario   TEXT      -- Contenido narrativo
+    p_user_id     tab_Usuarios.id_usuario%TYPE,   -- Identidad del autor
+    p_calificacion tab_Opiniones.calificacion%TYPE, -- Escala numérica de satisfacción
+    p_comentario   tab_Opiniones.comentario%TYPE      -- Contenido narrativo
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_new_id INTEGER; -- Recipiente para la nueva PK
+    v_new_id tab_Opiniones.id_opinion%TYPE; -- Recipiente para la nueva PK
 BEGIN
     -- PASO 1: Validación de integridad sobre la escala estelar.
     IF p_calificacion < 1 OR p_calificacion > 5 THEN
@@ -551,7 +568,7 @@ $$ LANGUAGE plpgsql STABLE;
 -- ║  4. Retorna JSON array → JS pobla el dropdown hijo.     ║
 -- ╚══════════════════════════════════════════════════════════╝
 CREATE OR REPLACE FUNCTION fn_geo_ciudades(
-    p_depto_id INTEGER -- Filtro de dependencia territorial
+    p_depto_id tab_Departamentos.id_departamento%TYPE -- Filtro de dependencia territorial
 )
 RETURNS JSON
 AS $$
@@ -640,12 +657,12 @@ $$ LANGUAGE plpgsql STABLE;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_admin_check_role(
-    p_target_id INTEGER -- ID del usuario a consultar
+    p_target_id tab_Usuarios.id_usuario%TYPE -- ID del usuario a consultar
 )
 RETURNS TEXT 
 AS $$
 DECLARE
-    v_rol TEXT; -- Escalar de rol
+    v_rol tab_Usuarios.rol%TYPE; -- Escalar de rol
 BEGIN
     -- Consulta rápida al maestro de usuarios.
     SELECT u.rol INTO v_rol
@@ -679,13 +696,13 @@ $$ LANGUAGE plpgsql STABLE;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_admin_toggle_client(
-    p_target_id  INTEGER,    -- El usuario a Intervention
-    p_new_state  BOOLEAN    -- Estado bit (TRUE/FALSE)
+    p_target_id  tab_Usuarios.id_usuario%TYPE,    -- El usuario a Intervention
+    p_new_state  tab_Usuarios.activo%TYPE    -- Estado bit (TRUE/FALSE)
 )
 RETURNS JSON
 AS $$
 DECLARE
-    v_rol TEXT; -- Verificador de privilegios
+    v_rol tab_Usuarios.rol%TYPE; -- Verificador de privilegios
 BEGIN
     -- Verificación preventiva de existencia y jerarquía.
     SELECT u.rol INTO v_rol FROM tab_Usuarios u WHERE u.id_usuario = p_target_id;
@@ -742,10 +759,10 @@ CREATE OR REPLACE FUNCTION fn_admin_get_settings()
 RETURNS JSON
 AS $$
 DECLARE
-    v_nombre_tienda VARCHAR(255);
-    v_moneda        VARCHAR(10);
+    v_nombre_tienda tab_Configuracion.valor%TYPE;
+    v_moneda        tab_Configuracion.valor%TYPE;
     v_tasa          NUMERIC;
-    v_admin_nombre  VARCHAR(100);
+    v_admin_nombre  tab_Usuarios.nom_usuario%TYPE;
 BEGIN
     SELECT valor INTO v_nombre_tienda FROM tab_Configuracion WHERE clave = 'nombre_tienda';
     SELECT valor INTO v_moneda        FROM tab_Configuracion WHERE clave = 'moneda';
@@ -836,7 +853,7 @@ CREATE OR REPLACE FUNCTION fn_admin_update_settings(
 RETURNS JSON
 AS $$
 DECLARE
-    v_moneda      VARCHAR(50);
+    v_moneda      tab_Configuracion.valor%TYPE;
     v_tasa        NUMERIC;
 BEGIN
     v_moneda := trim(p_data->>'moneda');
@@ -881,7 +898,7 @@ $$ LANGUAGE plpgsql;
 -- ╚══════════════════════════════════════════════════════════╝
 
 CREATE OR REPLACE FUNCTION fn_admin_get_hash(
-    p_id_usuario INTEGER
+    p_id_usuario tab_Usuarios.id_usuario%TYPE
 )
 RETURNS TEXT
 AS $$
@@ -896,8 +913,8 @@ $$ LANGUAGE plpgsql STABLE;
 
 
 CREATE OR REPLACE FUNCTION fn_admin_set_password(
-    p_id_usuario INTEGER,
-    p_nuevo_hash TEXT
+    p_id_usuario tab_Usuarios.id_usuario%TYPE,
+    p_nuevo_hash tab_Usuarios.contra%TYPE
 )
 RETURNS JSON
 AS $$
@@ -918,8 +935,8 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION fn_admin_update_nombre(
-    p_id_usuario INTEGER,
-    p_nuevo_nombre TEXT
+    p_id_usuario tab_Usuarios.id_usuario%TYPE,
+    p_nuevo_nombre tab_Usuarios.nom_usuario%TYPE
 )
 RETURNS JSON
 AS $$

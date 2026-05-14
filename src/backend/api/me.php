@@ -47,7 +47,7 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
     $userId = $_SESSION['user_id'];
 
     try {
-        $stmt = $pdo->prepare("SELECT fn_auth_get_session(?::INTEGER)");
+        $stmt = $pdo->prepare("SELECT fn_auth_get_session(?::SMALLINT)");
         $stmt->execute([$userId]);
         $jsonResult = $stmt->fetchColumn();
 
@@ -75,7 +75,9 @@ if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
                 "nombre" => $userData['nom_usuario'] ?? 'Usuario',
                 "rol" => $userData['rol'] ?? 'cliente',
                 "direccion" => $address,
-                "ciudad" => $city
+                "ciudad" => $city,
+                "departamento" => ($userData['nombre_departamento'] ?? null) ?: null,
+                "id_departamento" => ($userData['id_departamento'] ?? null) ?: null
             ]
         ]);
 

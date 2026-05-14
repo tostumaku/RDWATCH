@@ -73,8 +73,8 @@ try {
             case 'GET':
                 $stmt = $pdo->prepare("SELECT fn_cat_get_subcategorias()");
                 $stmt->execute();
-                $subs = json_decode($stmt->fetchColumn(), true);
-                echo json_encode(['ok' => true, 'subcategorias' => $subs]);
+                $json = $stmt->fetchColumn() ?: '[]';
+                echo '{"ok":true,"subcategorias":' . $json . '}';
                 break;
 
             // CREAR SUBCATEGORÍA
@@ -90,9 +90,10 @@ try {
                     'nom_subcategoria' => 'name' // Nombre de la subcategoría
                 ]);
 
-                $stmt = $pdo->prepare("SELECT fn_cat_create_subcategoria(?, ?, ?)");
+                $stmt = $pdo->prepare("SELECT fn_cat_create_subcategoria(?::SMALLINT, ?::SMALLINT, ?::TEXT)");
                 $stmt->execute([$data['id_categoria'], $data['id_subcategoria'], $data['nom_subcategoria']]);
-                echo json_encode(json_decode($stmt->fetchColumn(), true));
+                $jsonResponse = $stmt->fetchColumn();
+                echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
                 break;
 
             // ACTUALIZAR SUBCATEGORÍA (nombre y/o estado)
@@ -103,9 +104,10 @@ try {
 
                 $estado = isset($data['estado']) ? ($data['estado'] ? true : false) : true;
 
-                $stmt = $pdo->prepare("SELECT fn_cat_update_subcategoria(?::INTEGER, ?::INTEGER, ?, ?)");
+                $stmt = $pdo->prepare("SELECT fn_cat_update_subcategoria(?::SMALLINT, ?::SMALLINT, ?::TEXT, ?::BOOLEAN)");
                 $stmt->execute([$data['id_categoria'], $data['id_subcategoria'], $data['nom_subcategoria'], $estado ? 'true' : 'false']);
-                echo json_encode(json_decode($stmt->fetchColumn(), true));
+                $jsonResponse = $stmt->fetchColumn();
+                echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
                 break;
 
             // DESACTIVAR SUBCATEGORÍA (soft delete con protección de productos activos)
@@ -119,13 +121,15 @@ try {
                 $idSub = $data['id_subcategoria'] ?? null;
 
                 if ($idCat === null || $idSub === null) {
+                    http_response_code(400);
                     echo json_encode(['ok' => false, 'msg' => 'Faltan IDs de referencia para la desactivación']);
                     exit;
                 }
 
-                $stmt = $pdo->prepare("SELECT fn_cat_delete_subcategoria(?::INTEGER, ?::INTEGER, ?)");
+                $stmt = $pdo->prepare("SELECT fn_cat_delete_subcategoria(?::SMALLINT, ?::SMALLINT, ?::VARCHAR)");
                 $stmt->execute([$idCat, $idSub, 'admin_panel']);
-                echo json_encode(json_decode($stmt->fetchColumn(), true));
+                $jsonResponse = $stmt->fetchColumn();
+                echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
                 break;
         }
     }
@@ -138,8 +142,8 @@ try {
             case 'GET':
                 $stmt = $pdo->prepare("SELECT fn_cat_get_categorias()");
                 $stmt->execute();
-                $cats = json_decode($stmt->fetchColumn(), true);
-                echo json_encode(['ok' => true, 'categorias' => $cats]);
+                $json = $stmt->fetchColumn() ?: '[]';
+                echo '{"ok":true,"categorias":' . $json . '}';
                 break;
 
             // CREAR CATEGORÍA
@@ -155,14 +159,15 @@ try {
 
                 $estado = isset($data['estado']) ? ($data['estado'] ? true : false) : true;
 
-                $stmt = $pdo->prepare("SELECT fn_cat_create_categoria(?, ?, ?, ?)");
+                $stmt = $pdo->prepare("SELECT fn_cat_create_categoria(?::SMALLINT, ?::TEXT, ?::TEXT, ?::BOOLEAN)");
                 $stmt->execute([
                     $data['id_categoria'],
                     $data['nom_categoria'],
                     $data['descripcion_categoria'] ?? '',
-                    $estado
+                    $estado ? 'true' : 'false'
                 ]);
-                echo json_encode(json_decode($stmt->fetchColumn(), true));
+                $jsonResponse = $stmt->fetchColumn();
+                echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
                 break;
 
             // ACTUALIZAR CATEGORÍA
@@ -173,14 +178,15 @@ try {
 
                 $estado = isset($data['estado']) ? ($data['estado'] ? true : false) : true;
 
-                $stmt = $pdo->prepare("SELECT fn_cat_update_categoria(?, ?, ?, ?)");
+                $stmt = $pdo->prepare("SELECT fn_cat_update_categoria(?::SMALLINT, ?::TEXT, ?::TEXT, ?::BOOLEAN)");
                 $stmt->execute([
                     $data['id_categoria'],
                     $data['nom_categoria'],
                     $data['descripcion_categoria'] ?? '',
-                    $estado
+                    $estado ? 'true' : 'false'
                 ]);
-                echo json_encode(json_decode($stmt->fetchColumn(), true));
+                $jsonResponse = $stmt->fetchColumn();
+                echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
                 break;
 
             // ELIMINAR CATEGORÍA (SOFT DELETE CON DOBLE PROTECCIÓN)
@@ -195,13 +201,15 @@ try {
 
                 $idCat = $data['id_categoria'] ?? null;
                 if ($idCat === null) {
+                    http_response_code(400);
                     echo json_encode(['ok' => false, 'msg' => 'ID de categoría faltante']);
                     exit;
                 }
 
-                $stmt = $pdo->prepare("SELECT fn_cat_delete_categoria(?::INTEGER)");
-                $stmt->execute([$idCat]);
-                echo json_encode(json_decode($stmt->fetchColumn(), true));
+                $stmt = $pdo->prepare("SELECT fn_cat_delete_categoria(?::SMALLINT, ?::VARCHAR)");
+                $stmt->execute([$idCat, 'admin_panel']);
+                $jsonResponse = $stmt->fetchColumn();
+                echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
                 break;
 
             default:
@@ -211,8 +219,10 @@ try {
         }
     }
 }
-catch (Throwable $e) {
+catch (PDOException $e) {
     http_response_code(500);
-    error_log('[categorias.php] ' . $e->getMessage());
-    echo json_encode(['ok' => false, 'msg' => 'Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo.']);
+    echo json_encode(['ok' => false, 'msg' => 'Error de BD: ' . $e->getMessage()]);
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode(['ok' => false, 'msg' => 'Error de PHP: ' . $e->getMessage()]);
 }

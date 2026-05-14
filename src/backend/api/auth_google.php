@@ -15,6 +15,7 @@
 
 require_once '../config.php';
 require_once '../utils/Validation.php';
+require_once '../utils/security_utils.php';
 
 // Esta librería debe instalarse vía Composer en el servidor: composer require google/apiclient
 require_once '../vendor/autoload.php'; 
@@ -99,9 +100,18 @@ try {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
+
+        // Regenerar ID de sesión para prevenir session fixation attacks
+        session_regenerate_id(true);
+
+        // Establecer datos de usuario en la sesión
         $_SESSION['user_id'] = $userData['id_usuario'];
         $_SESSION['user_name'] = $userData['nom_usuario'];
         $_SESSION['user_role'] = $userData['rol'];
+        $_SESSION['logged_in'] = true;
+
+        // Generar token CSRF dinámico para proteger operaciones posteriores
+        generateCsrfToken();
 
         // 5. Responder con éxito
         echo json_encode([

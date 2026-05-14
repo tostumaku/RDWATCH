@@ -67,6 +67,7 @@ try {
         $data = getJsonInput();
 
         if (!isset($data['id_usuario'], $data['activo'])) {
+            http_response_code(400);
             echo json_encode(['ok' => false, 'msg' => 'Datos incompletos para actualizar estado']);
             exit;
         }
@@ -80,7 +81,8 @@ try {
         // 3. Solo entonces aplica el cambio
         $stmt = $pdo->prepare("SELECT fn_admin_toggle_client(?, ?)");
         $stmt->execute([$id, $nuevoEstado ? 'true' : 'false']);
-        echo json_encode(json_decode($stmt->fetchColumn(), true));
+        $jsonResponse = $stmt->fetchColumn();
+        echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
 
     }
     else {

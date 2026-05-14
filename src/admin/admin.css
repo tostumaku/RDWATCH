@@ -9,13 +9,30 @@
 /* reset menor para inputs del admin */
 .input,
 select,
-textarea {
+textarea,
+input[type="text"],
+input[type="number"],
+input[type="url"],
+input[type="password"] {
   font-family: var(--font-body);
   border: 1px solid #ddd;
   border-radius: 6px;
   padding: 10px 12px;
   outline: none;
+  width: 100%;
+  box-sizing: border-box;
 }
+
+/* Quitar flechas de los input tipo number (ej. en modales) */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 
 .input:focus,
 select:focus,
@@ -97,6 +114,67 @@ textarea:focus {
 .admin-section.is-active {
   display: block;
 }
+
+/* ===================================================================
+   LAYOUT CATEGORÍAS: Apilado vertical, cada tarjeta toma ancho completo
+   =================================================================== */
+.cats-layout {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 30px;
+  width: 100%;
+}
+
+.cats-layout > .card {
+  width: 100%;
+  flex: none;
+}
+
+/* Botones de acción en tablas: compactos con ícono + texto */
+.btn-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.btn-accion.editar {
+  background: rgba(175, 148, 79, 0.1);
+  color: var(--primary-dark);
+  border-color: rgba(175, 148, 79, 0.3);
+}
+.btn-accion.editar:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-accion.desactivar {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  border-color: rgba(220, 53, 69, 0.3);
+}
+.btn-accion.desactivar:hover {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-accion.reactivar {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+  border-color: rgba(40, 167, 69, 0.3);
+}
+.btn-accion.reactivar:hover {
+  background: #28a745;
+  color: white;
+}
+
 
 /* Tarjetas y estadísticas Premium */
 .stats-grid {
@@ -257,11 +335,36 @@ textarea:focus {
   border: 1px solid #eee;
   border-radius: 10px;
   box-shadow: var(--shadow-sm);
+  overflow-x: auto;         /* scroll horizontal encapsulado */
+  -webkit-overflow-scrolling: touch;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
+}
+
+/* Columna Acciones: lo más compacta posible, botones no se parten */
+.table td.actions,
+.table th.actions-header {
+  white-space: nowrap;
+  width: 1%;           /* colapsa al mínimo, el resto lo toma Nombre */
+  text-align: right;
+  padding-right: 16px;
+}
+
+/* Botones de acción alineados en línea con gap */
+.table td.actions .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+}
+
+/* Columna Nombre (2da columna) se estira para llenar el hueco */
+.table td:nth-child(2),
+.table th:nth-child(2) {
+  width: auto;
 }
 
 .table thead th {
@@ -360,6 +463,9 @@ textarea:focus {
   border-radius: 10px;
   box-shadow: var(--shadow-xl);
   width: min(720px, 92vw);
+  max-width: 100%;
+  max-height: 90vh; /* Prevenir que el modal desborde la pantalla verticalmente */
+  overflow-y: auto; /* Permitir scroll interno en el modal */
   padding: var(--spacing-lg);
   position: relative;
 }
@@ -525,6 +631,7 @@ textarea:focus {
     z-index: 39;
     display: none;
     backdrop-filter: blur(3px);
+    transition: all 0.3s ease;
   }
   
   .admin-sidebar-overlay.show {
@@ -559,7 +666,7 @@ textarea:focus {
   .admin-main {
     margin-left: 0;
     padding: 10px;
-    margin-top: calc(var(--header-h) + 10px);
+    margin-top: calc(var(--header-h) + 15px);
   }
   
   .stat-card {

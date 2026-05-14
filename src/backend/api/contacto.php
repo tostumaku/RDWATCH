@@ -98,7 +98,8 @@ try {
     $stmt->execute([$nombre, $email, $telefono, $mensaje]);
 
     // Devolvemos el JSON exacto que PostgreSQL nos retorna de forma segura
-    echo json_encode(json_decode($stmt->fetchColumn(), true));
+    $jsonResponse = $stmt->fetchColumn();
+    echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
 
 }
 catch (PDOException $e) {

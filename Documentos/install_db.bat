@@ -11,10 +11,15 @@ echo =====================================================
 
 :: --- CONFIGURACIÓN ---
 set PG_PSQL="C:\Program Files\PostgreSQL\17\bin\psql.exe"
-set DB_HOST=localhost
-set DB_NAME=db_rdwatch
-set DB_USER=postgres
-set PGPASSWORD=toby,2003
+
+:: Leer credenciales desde el archivo .env
+echo Leyendo credenciales de ..\src\backend\.env...
+for /f "tokens=1,2 delims==" %%A in (..\src\backend\.env) do (
+    if "%%A"=="DB_HOST" set DB_HOST=%%~B
+    if "%%A"=="DB_NAME" set DB_NAME=%%~B
+    if "%%A"=="DB_USER" set DB_USER=%%~B
+    if "%%A"=="DB_PASS" set PGPASSWORD=%%~B
+)
 set PGCLIENTENCODING=UTF8
 
 :: Comando base para psql ejecutando sobre la BD del proyecto

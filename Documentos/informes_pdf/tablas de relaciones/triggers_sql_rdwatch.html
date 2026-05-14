@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Backend Code Portal - RD WATCH V2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: rgba(22, 27, 34, 0.9);
+            --accent-color: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border-color: rgba(48, 54, 61, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --success: #238636;
+            --warning: #d29922;
+            --error: #f85149;
+            --atomic: #bc8cff;
+            --code-bg: #010409;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 350px;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #58a6ff, #bc8cff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-box {
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 0.7rem 1rem 0.7rem 2.5rem;
+            border-radius: 10px;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            opacity: 0.5;
+        }
+
+        .module-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding-right: 5px;
+        }
+
+        .module-card {
+            padding: 0.8rem;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .module-card:hover {
+            background: rgba(88, 166, 255, 0.05);
+            border-color: rgba(88, 166, 255, 0.2);
+        }
+
+        .module-card.active {
+            background: rgba(88, 166, 255, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .module-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .module-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 10%, #161b22 0%, #0d1117 100%);
+        }
+
+        /* --- Code Viewer Area --- */
+        #code-area {
+            height: 50%;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            background: var(--code-bg);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-header {
+            padding: 0.7rem 1.5rem;
+            background: rgba(48, 54, 61, 0.3);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .code-container {
+            flex: 1;
+            overflow: auto;
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #d1d5db;
+        }
+
+        pre {
+            margin: 0;
+            tab-size: 4;
+        }
+
+        .keyword {
+            color: #ff7b72;
+            font-weight: 700;
+        }
+
+        .function {
+            color: #d2a8ff;
+        }
+
+        .comment {
+            color: #8b949e;
+            font-style: italic;
+        }
+
+        .inline-comment {
+            padding-left: 2rem;
+            /* Aleja los comentarios a la derecha */
+        }
+
+        .string {
+            color: #a5d6ff;
+        }
+
+        .type {
+            color: #ffa657;
+        }
+
+        /* --- Detail Table Area --- */
+        #detail-area {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.8rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--accent-color);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.2);
+            text-align: left;
+            padding: 12px 15px;
+            color: var(--text-dim);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
+            cursor: pointer;
+        }
+
+        tr:hover {
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        code-inline {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: white;
+            display: inline-block;
+        }
+
+        .tag-select {
+            background: var(--accent-color);
+        }
+
+        .tag-insert {
+            background: var(--success);
+        }
+
+        .tag-update {
+            background: var(--warning);
+            color: black;
+        }
+
+        .tag-delete {
+            background: var(--error);
+        }
+
+        .tag-atomic {
+            background: var(--atomic);
+        }
+
+        .php-badge {
+            font-size: 0.7rem;
+            background: #30363d;
+            color: #8b949e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            margin-top: 5rem;
+            color: var(--text-dim);
+        }
+
+        .btn-view-code {
+            padding: 4px 10px;
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            border-radius: 15px;
+            color: var(--accent-color);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .highlight-line {
+            background: rgba(88, 166, 255, 0.1);
+            border-left: 2px solid var(--accent-color);
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <h1>RD WATCH V2</h1>
+        <p style="font-size: 0.75rem; color: var(--text-dim);">Portal de Triggers y Auditoría</p>
+
+        <div class="search-box">
+            <input type="text" id="global-search" placeholder="Buscar trigger o tabla......">
+        </div>
+
+        <div class="module-list" id="module-list">
+            <!-- Populated via JS -->
+        </div>
+
+        <div
+            style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.7rem; color: var(--text-dim);">
+            <p>Estado: Sistema Unificado</p>
+            <p>© 2026 Relojería Durán</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="code-area">
+            <div class="code-header">
+                <span id="code-filename">Seleccione una función para inspeccionar</span>
+                <span id="code-stats">PL/pgSQL</span>
+            </div>
+            <div class="code-container">
+                <pre id="code-display" class="fade-in">-- Haga clic en una función de la tabla inferior para ver su lógica SQL completa.
+-- Aquí se mostrará la implementación detallada de PostgreSQL.</pre>
+            </div>
+        </div>
+
+        <div id="detail-area">
+            <!-- Contenido dinámico aquí -->
+            <div class="empty-state">
+                <p>Seleccione un módulo en la barra lateral para comenzar</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const functionCode = {
+            'fun_audit_rdwatch': `CREATE OR REPLACE FUNCTION fun_audit_rdwatch()                        -- Declaración formal de la función manejadora de eventos
+RETURNS TRIGGER AS                                                    -- Define que la función retornará un objeto TRIGGER especial
+\$\$                                                                    -- Apertura del encapsulamiento de lógica PL/pgSQL
+BEGIN                                                                 -- Inicio bloque de ejecución para evaluación de la transacción
+    -- Para operaciones INSERT
+    IF TG_OP = 'INSERT' THEN                                          -- Detección del tipo de evento: Nuevo registro en base de datos
+        NEW.usr_insert := CURRENT_USER;                               -- Grabación del identificador de sesión del operador creador
+        NEW.fec_insert := CURRENT_TIMESTAMP;                          -- Estampado temporal automático UTC de la creación inicial
+        NEW.usr_update := CURRENT_USER;                               -- Actualización del identificador del último operador modificador
+        NEW.fec_update := CURRENT_TIMESTAMP;                          -- Renovación automática del timestamp de última modificación
+        RETURN NEW;                                                   -- Devolución del objeto NEW enriquecido al flujo transaccional
+    END IF;                                                           -- Cierre condicional de la estructura de control IF
+
+    -- Para operaciones UPDATE
+    IF TG_OP = 'UPDATE' THEN                                          -- Detección del tipo de evento: Modificación de un registro
+        -- Preservar los valores originales de insert
+        NEW.usr_insert := OLD.usr_insert;                             -- Grabación del identificador de sesión del operador creador
+        NEW.fec_insert := OLD.fec_insert;                             -- Estampado temporal automático UTC de la creación inicial
+        -- Actualizar solo los campos de update
+        NEW.usr_update := CURRENT_USER;                               -- Actualización del identificador del último operador modificador
+        NEW.fec_update := CURRENT_TIMESTAMP;                          -- Renovación automática del timestamp de última modificación
+        RETURN NEW;                                                   -- Devolución del objeto NEW enriquecido al flujo transaccional
+    END IF;                                                           -- Cierre condicional de la estructura de control IF
+
+    RETURN NEW;                                                       -- Devolución del objeto NEW enriquecido al flujo transaccional
+END;                                                                  -- Fin de las directivas operativas de auditoría
+\$\$                                                                    -- Apertura del encapsulamiento de lógica PL/pgSQL
+LANGUAGE PLPGSQL;                                                     -- Especificación del lenguaje procedural de base de datos`,
+            'tri_audit_marcas': `CREATE TRIGGER tri_audit_marcas                                       -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Marcas                             -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW                                                      -- Modalidad de ejecución: Individual por cada registro impactado
+    EXECUTE FUNCTION fun_audit_rdwatch();                             -- Delegación de la rutina inyectora a la función maestra unificada`,
+            'tri_audit_usuarios': `CREATE TRIGGER tri_audit_usuarios                                     -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Usuarios                           -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_categorias': `CREATE TRIGGER tri_audit_categorias                                   -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Categorias                         -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_subcategorias': `CREATE TRIGGER tri_audit_subcategorias                                -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Subcategorias                      -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_proveedor': `CREATE TRIGGER tri_audit_proveedor                                    -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Proveedor                          -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_productos': `CREATE TRIGGER tri_audit_productos                                    -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Productos                          -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_servicios': `CREATE TRIGGER tri_audit_servicios                                    -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Servicios                          -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_carrito': `CREATE TRIGGER tri_audit_carrito                                      -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Carrito                            -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_carrito_detalle': `CREATE TRIGGER tri_audit_carrito_detalle                              -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Carrito_Detalle                    -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_orden': `CREATE TRIGGER tri_audit_orden                                        -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Orden                              -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_detalle_orden': `CREATE TRIGGER tri_audit_detalle_orden                                -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Detalle_Orden                      -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_facturas': `CREATE TRIGGER tri_audit_facturas                                     -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Facturas                           -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_detalle_factura': `CREATE TRIGGER tri_audit_detalle_factura                              -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Detalle_Factura                    -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_pagos': `CREATE TRIGGER tri_audit_pagos                                        -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Pagos                              -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_envios': `CREATE TRIGGER tri_audit_envios                                       -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Envios                             -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_opiniones': `CREATE TRIGGER tri_audit_opiniones                                    -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Opiniones                          -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_recepciones_proveedor': `CREATE TRIGGER tri_audit_recepciones_proveedor                        -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Recepciones_Proveedor              -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_metodos_pago': `CREATE TRIGGER tri_audit_metodos_pago                                 -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Metodos_Pago                       -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_usuario_metodo_pago': `CREATE TRIGGER tri_audit_usuario_metodo_pago                          -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Usuario_Metodo_Pago                -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_promociones': `CREATE TRIGGER tri_audit_promociones                                  -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Promociones                        -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_productos_promociones': `CREATE TRIGGER tri_audit_productos_promociones                        -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Productos_Promociones              -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_reservas': `CREATE TRIGGER tri_audit_reservas                                     -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Reservas                           -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_contacto': `CREATE TRIGGER tri_audit_contacto                                     -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Contacto                           -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_empleados': `CREATE TRIGGER tri_audit_empleados                                    -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Empleados                          -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_eventos': `CREATE TRIGGER tri_audit_eventos                                      -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Eventos                            -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_ciudades': `CREATE TRIGGER tri_audit_ciudades                                     -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Ciudades                           -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`,
+            'tri_audit_direcciones_envio': `CREATE TRIGGER tri_audit_direcciones_envio                            -- Declaración del evento interceptor vinculante en el diccionario
+    BEFORE INSERT OR UPDATE ON tab_Direcciones_Envio                  -- Fase de interceptación PREVIA a la consolidación física
+    FOR EACH ROW EXECUTE FUNCTION fun_audit_rdwatch();                -- Modalidad de ejecución: Individual por cada registro impactado`
+        };
+
+        const modules = {
+            'm_nucleo': {
+                'id': 'auditoria_m_nucleo.sql',
+                'title': 'Núcleo de Auditoría',
+                'fase': 'Motor Central',
+                'desc_short': 'Función de enrutamiento principal para metadatos.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'triggers': 1},
+                'functions': [
+                    {'id': 'fun_audit_rdwatch', 'name': 'fun_audit_rdwatch', 'type': 'FUNCTION', 'desc': 'Función maestra que inyecta automáticamente metadatos de usuario y timestamp en cada INSERT/UPDATE.', 'php': 'N/A'},
+                ]
+            },
+            'm_usuarios': {
+                'id': 'auditoria_m_usuarios.sql',
+                'title': 'Control Usuarios',
+                'fase': 'Auditoría',
+                'desc_short': 'Triggers de entidades de personal y cuentas.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'triggers': 3},
+                'functions': [
+                    {'id': 'tri_audit_usuarios', 'name': 'tri_audit_usuarios', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Usuarios.', 'php': 'N/A'},
+                    {'id': 'tri_audit_usuario_metodo_pago', 'name': 'tri_audit_usuario_metodo_pago', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Usuario_Metodo_Pago.', 'php': 'N/A'},
+                    {'id': 'tri_audit_empleados', 'name': 'tri_audit_empleados', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Empleados.', 'php': 'N/A'},
+                ]
+            },
+            'm_catalogo': {
+                'id': 'auditoria_m_catalogo.sql',
+                'title': 'Control Catálogo',
+                'fase': 'Auditoría',
+                'desc_short': 'Triggers de productos, servicios y taxonomía.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'triggers': 8},
+                'functions': [
+                    {'id': 'tri_audit_marcas', 'name': 'tri_audit_marcas', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Marcas.', 'php': 'N/A'},
+                    {'id': 'tri_audit_categorias', 'name': 'tri_audit_categorias', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Categorias.', 'php': 'N/A'},
+                    {'id': 'tri_audit_subcategorias', 'name': 'tri_audit_subcategorias', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Subcategorias.', 'php': 'N/A'},
+                    {'id': 'tri_audit_proveedor', 'name': 'tri_audit_proveedor', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Proveedor.', 'php': 'N/A'},
+                    {'id': 'tri_audit_productos', 'name': 'tri_audit_productos', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Productos.', 'php': 'N/A'},
+                    {'id': 'tri_audit_servicios', 'name': 'tri_audit_servicios', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Servicios.', 'php': 'N/A'},
+                    {'id': 'tri_audit_recepciones_proveedor', 'name': 'tri_audit_recepciones_proveedor', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Recepciones_Proveedor.', 'php': 'N/A'},
+                    {'id': 'tri_audit_productos_promociones', 'name': 'tri_audit_productos_promociones', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Productos_Promociones.', 'php': 'N/A'},
+                ]
+            },
+            'm_geografia': {
+                'id': 'auditoria_m_geografia.sql',
+                'title': 'Control Geografía',
+                'fase': 'Auditoría',
+                'desc_short': 'Triggers de locaciones y envíos.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'triggers': 3},
+                'functions': [
+                    {'id': 'tri_audit_envios', 'name': 'tri_audit_envios', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Envios.', 'php': 'N/A'},
+                    {'id': 'tri_audit_ciudades', 'name': 'tri_audit_ciudades', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Ciudades.', 'php': 'N/A'},
+                    {'id': 'tri_audit_direcciones_envio', 'name': 'tri_audit_direcciones_envio', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Direcciones_Envio.', 'php': 'N/A'},
+                ]
+            },
+            'm_comercio': {
+                'id': 'auditoria_m_comercio.sql',
+                'title': 'Control Comercial',
+                'fase': 'Auditoría',
+                'desc_short': 'Triggers de transacciones, órdenes y facturas.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'triggers': 10},
+                'functions': [
+                    {'id': 'tri_audit_carrito', 'name': 'tri_audit_carrito', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Carrito.', 'php': 'N/A'},
+                    {'id': 'tri_audit_carrito_detalle', 'name': 'tri_audit_carrito_detalle', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Carrito_Detalle.', 'php': 'N/A'},
+                    {'id': 'tri_audit_orden', 'name': 'tri_audit_orden', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Orden.', 'php': 'N/A'},
+                    {'id': 'tri_audit_detalle_orden', 'name': 'tri_audit_detalle_orden', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Detalle_Orden.', 'php': 'N/A'},
+                    {'id': 'tri_audit_facturas', 'name': 'tri_audit_facturas', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Facturas.', 'php': 'N/A'},
+                    {'id': 'tri_audit_detalle_factura', 'name': 'tri_audit_detalle_factura', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Detalle_Factura.', 'php': 'N/A'},
+                    {'id': 'tri_audit_pagos', 'name': 'tri_audit_pagos', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Pagos.', 'php': 'N/A'},
+                    {'id': 'tri_audit_opiniones', 'name': 'tri_audit_opiniones', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Opiniones.', 'php': 'N/A'},
+                    {'id': 'tri_audit_metodos_pago', 'name': 'tri_audit_metodos_pago', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Metodos_Pago.', 'php': 'N/A'},
+                    {'id': 'tri_audit_promociones', 'name': 'tri_audit_promociones', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Promociones.', 'php': 'N/A'},
+                ]
+            },
+            'm_otros': {
+                'id': 'auditoria_m_otros.sql',
+                'title': 'Otros Controles',
+                'fase': 'Auditoría',
+                'desc_short': 'Triggers de contacto y reservas.',
+                'stats': {'functions': 0, 'lines': 0, 'tables': 0, 'php': 0, 'triggers': 3},
+                'functions': [
+                    {'id': 'tri_audit_reservas', 'name': 'tri_audit_reservas', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Reservas.', 'php': 'N/A'},
+                    {'id': 'tri_audit_contacto', 'name': 'tri_audit_contacto', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Contacto.', 'php': 'N/A'},
+                    {'id': 'tri_audit_eventos', 'name': 'tri_audit_eventos', 'type': 'TRIGGER', 'desc': 'Disparador para auditar la entidad tab_Eventos.', 'php': 'N/A'},
+                ]
+            },
+        };
+
+        function init() {
+            const list = document.getElementById('module-list');
+            Object.entries(modules).forEach(([id, data]) => {
+                const card = document.createElement('div');
+                card.className = 'module-card';
+                card.id = `card-${id}`;
+                card.innerHTML = `
+                    <div class="module-title">${data.id}</div>
+                    <div class="module-subtitle" style="margin-bottom: 6px;">${data.title} &middot; ${data.fase}</div>
+                    <div style="font-size: 0.65rem; color: var(--text-dim); line-height: 1.4;">${data.desc_short}</div>
+                `;
+                card.onclick = () => selectModule(id);
+                list.appendChild(card);
+            });
+
+            document.getElementById('global-search').addEventListener('input', handleSearch);
+        }
+
+        function selectModule(id) {
+            const data = modules[id];
+            const detailArea = document.getElementById('detail-area');
+
+            document.querySelectorAll('.module-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`card-${id}`).classList.add('active');
+
+            detailArea.innerHTML = `
+                <div class="fade-in">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+                        <div>
+                            <h2 style="font-size: 1.5rem; margin-bottom: 0.3rem;">${data.id}</h2>
+                            <p style="color: var(--text-dim); font-size: 0.9rem;">${data.title} — Lógica de Negocio Encápsulada</p>
+                        </div>
+                        <div class="tag tag-atomic" style="padding: 0.5rem 1rem;">${data.fase}</div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-value">${data.stats.functions}</div><div class="stat-label">Funciones</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.stats.lines}</div><div class="stat-label">Líneas SQL</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.stats.tables}</div><div class="stat-label">Tablas Rel.</div></div>
+                        <div class="stat-card"><div class="stat-value">${data.stats.php}</div><div class="stat-label">Archivos PHP</div></div>
+                    </div>
+
+                    <h3 style="margin: 2rem 0 1rem; font-size: 1rem; border-left: 3px solid var(--accent-color); padding-left: 10px;">Funciones Disponibles para Inspección</h3>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Función (Clic para ver código)</th>
+                                    <th>Tipo</th>
+                                    <th>Resumen</th>
+                                    <th>Endpoint PHP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.functions.map(f => `
+                                    <tr onclick="loadCode('${f.id}', '${data.id}')">
+                                        <td><code-inline>${f.name}</code-inline></td>
+                                        <td><span class="tag tag-${f.type.toLowerCase().split('/')[0].replace('+', '')}">${f.type}</span></td>
+                                        <td style="font-size: 0.75rem;">${f.desc}</td>
+                                        <td><span class="php-badge">${f.php}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        function highlightSQL(code) {
+            if (!code) return '';
+
+            // Escape HTML first
+            code = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Strings
+            code = code.replace(/('(?:[^'\\]|\\.)*')/g, '<span class="string">$1</span>');
+
+            // Comments
+            code = code.replace(/(--.*?)$/gm, '<span class="comment">$1</span>');
+            code = code.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="comment">$1</span>');
+
+            // Keywords
+            const keywords = ['CREATE', 'OR', 'REPLACE', 'FUNCTION', 'RETURNS', 'TABLE', 'AS', 'DECLARE', 'BEGIN', 'END', 'IF', 'THEN', 'ELSE', 'ELSIF', 'WHILE', 'LOOP', 'FOR', 'IN', 'RETURN', 'QUERY', 'SELECT', 'FROM', 'WHERE', 'AND', 'JOIN', 'LEFT', 'ON', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'COALESCE', 'COUNT', 'SUM', 'IS', 'NULL', 'TRUE', 'FALSE', 'LIMIT', 'EXISTS', 'NOT', 'DEFAULT', 'EXCEPTION', 'WHEN', 'OTHERS', 'ROW_TO_JSON', 'JSON_BUILD_OBJECT', 'JSON_AGG', 'EXTRACT', 'EPOCH', 'NOW', 'ROUND'];
+            const typeWords = ['TEXT', 'BIGINT', 'INTEGER', 'NUMERIC', 'JSON', 'VARCHAR', 'BOOLEAN', 'TIMESTAMP', 'BYTEA', 'RECORD', 'VOID', 'DATE', 'TIME', 'INTERVAL'];
+
+            const kwRegex = new RegExp('\\b(' + keywords.join('|') + ')\\b', 'gi');
+            code = code.replace(kwRegex, '<span class="keyword">$1</span>');
+
+            const tyRegex = new RegExp('\\b(' + typeWords.join('|') + ')\\b', 'gi');
+            code = code.replace(tyRegex, '<span class="type">$1</span>');
+
+            // Function calls
+            code = code.replace(/ ([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g, ' <span class="function">$1</span>');
+
+            return code;
+        }
+
+        function loadCode(fnId, moduleId) {
+            const display = document.getElementById('code-display');
+            const filenameTarget = document.getElementById('code-filename');
+            const statsTarget = document.getElementById('code-stats');
+
+            filenameTarget.innerText = `${moduleId} > ${fnId}()`;
+            statsTarget.innerText = 'Definición de Disparador (Trigger)';
+
+            if (functionCode[fnId]) {
+                display.innerHTML = highlightSQL(functionCode[fnId]);
+                document.getElementById('code-area').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                display.innerHTML = `<span class="comment">-- El código para ${fnId} está disponible en el archivo físico ${moduleId}.
+-- Esta versión del dashboard incluye las funciones clave; 
+-- para más detalles consulte el código fuente adjunto.</span>`;
+            }
+
+            display.classList.remove('fade-in');
+            void display.offsetWidth; // Trigger reflow
+            display.classList.add('fade-in');
+        }
+
+        function handleSearch(e) {
+            const term = e.target.value.toLowerCase();
+            if (term === "") return;
+
+            const results = [];
+            Object.entries(modules).forEach(([modId, modData]) => {
+                modData.functions.forEach(f => {
+                    if (f.name.toLowerCase().includes(term) || f.desc.toLowerCase().includes(term) || f.php.toLowerCase().includes(term)) {
+                        results.push({ ...f, mod: modData.id });
+                    }
+                });
+            });
+
+            renderSearchResults(results, term);
+        }
+
+        function renderSearchResults(results, term) {
+            const detailArea = document.getElementById('detail-area');
+            if (results.length === 0) {
+                detailArea.innerHTML = `<div class="empty-state">No se encontraron funciones para "${term}"</div>`;
+                return;
+            }
+
+            detailArea.innerHTML = `
+                <div class="fade-in">
+                    <h2 style="margin-bottom: 1.5rem; font-size: 1.3rem;">Resultados para: "${term}"</h2>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Módulo</th>
+                                    <th>Función</th>
+                                    <th>Tipo</th>
+                                    <th>Propósito</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${results.map(r => `
+                                    <tr onclick="loadCode('${r.id}', '${r.mod}')">
+                                        <td style="font-size: 0.7rem; opacity: 0.6;">${r.mod}</td>
+                                        <td><code-inline>${r.name}</code-inline></td>
+                                        <td><span class="tag tag-${r.type.toLowerCase().split('/')[0].replace('+', '')}">${r.type}</span></td>
+                                        <td style="font-size: 0.75rem;">${r.desc}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+
+</html>

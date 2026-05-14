@@ -46,8 +46,7 @@
     <section class="page-hero-banner"
         style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('../img/hero-bg.jpg') no-repeat center center/cover;">
         <div class="container">
-            <h1 class="hero-title" style="font-size: 4rem; color: var(--primary-light); text-align: center;">Nuestra
-                Colección</h1>
+            <h1 class="hero-title" style="color: var(--primary-light); text-align: center;">Nuestra Colección</h1>
             <p class="hero-subtitle" style="text-align: center; color: var(--white);">Relojes de lujo, herramientas y
                 repuestos originales.</p>
         </div>
@@ -75,7 +74,7 @@
                     <h3>Marcas</h3>
                     <select id="brand-filter" class="form-select">
                         <option value="all">Todas las Marcas</option>
-                        <!-- Las marcas se cargan dinámicamente desde script.js -->
+                        <!-- Las marcas se cargan dinámicamente desde shop.js -->
                         <option option="Otro">Otras Marcas</option>
                     </select>
                 </div>
@@ -83,9 +82,13 @@
                 <div class="filter-group">
                     <h3>Rango de Precio (COP)</h3>
                     <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-                        <input type="number" id="price-min" placeholder="Mínimo" class="form-select" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57" style="width: 100%; padding: 8px; -moz-appearance: textfield;">
+                        <input type="number" id="price-min" placeholder="Mínimo" class="form-select" min="0"
+                            onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                            style="width: 100%; padding: 8px; -moz-appearance: textfield;">
                         <span style="color: var(--text-color);">-</span>
-                        <input type="number" id="price-max" placeholder="Máximo" class="form-select" min="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57" style="width: 100%; padding: 8px; -moz-appearance: textfield;">
+                        <input type="number" id="price-max" placeholder="Máximo" class="form-select" min="0"
+                            onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                            style="width: 100%; padding: 8px; -moz-appearance: textfield;">
                     </div>
                 </div>
             </aside>
@@ -141,8 +144,9 @@
     </div>
     <div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
 
-    <section class="checkout-section hidden-section" id="checkout-section">
-        <div class="container checkout-container">
+    <section class="checkout-section hidden-section" id="checkout-section"
+        style="background-color: #ffffff !important; background-image: none;">
+        <div class="container checkout-container" style="background-color: #ffffff;">
             <button class="button button-outline back-to-shop" onclick="backToCart()"><i class="fas fa-arrow-left"></i>
                 Volver al Carrito</button>
 
@@ -158,31 +162,34 @@
                         <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
                             <div class="form-group" style="flex: 1; margin: 0;">
                                 <label>Departamento</label>
-                                <select id="shipping-depto" required style="width: 100%; padding: 12px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background-color: rgba(255, 255, 255, 0.05); color: var(--text-color);">
+                                <select id="shipping-depto" required
+                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: var(--text-color);">
                                     <option value="">Seleccione departamento...</option>
                                 </select>
                             </div>
                             <div class="form-group" style="flex: 1; margin: 0;">
                                 <label>Ciudad</label>
-                                <select id="shipping-city" required disabled style="width: 100%; padding: 12px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background-color: rgba(255, 255, 255, 0.05); color: var(--text-color);">
+                                <select id="shipping-city" required disabled
+                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; color: var(--text-color);">
                                     <option value="">Primero seleccione Dpto.</option>
                                 </select>
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Dirección Completa e Indicaciones</label>
-                            <input type="text" id="shipping-address" required placeholder="Calle 123 #45-67, Torre 1 Apto 201 - Frente al parque">
+                            <input type="text" id="shipping-address" required
+                                placeholder="Calle 123 #45-67, Torre 1 Apto 201 - Frente al parque">
                         </div>
 
                         <h3>2. Pago por Consignación o Transferencia</h3>
                         <div class="payment-info-box"
-                            style="background: rgba(44, 62, 80, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid var(--primary-color);">
+                            style="background: rgba(175,148,79,0.06); padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid var(--primary-color);">
                             <p style="margin-bottom: 15px;">Para completar tu pedido, por favor realiza la transferencia
                                 a una de nuestras cuentas:</p>
                             <ul style="list-style: none; padding: 0;">
-                                <li style="margin-bottom: 10px;"><strong>Bancolombia (Ahorros):</strong> 123-456789-01
+                                <li style="margin-bottom: 10px;"><strong>Bancolombia (Ahorros):</strong> 02068128393
                                 </li>
-                                <li style="margin-bottom: 10px;"><strong>Nequi / Daviplata:</strong> 300 123 4567</li>
+                                <li style="margin-bottom: 10px;"><strong>llave bre-b</strong> @duran0095</li>
                                 <li><strong>Titular:</strong> Relojería Durán S.A.S</li>
                             </ul>
                         </div>
@@ -434,7 +441,11 @@
     <script src="js/config.js"></script>
     <script src="js/notifications.js"></script>
     <script src="js/security.js"></script>
-    <script src="js/script.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/shop.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/checkout.js"></script>
 </body>
 
 </html>

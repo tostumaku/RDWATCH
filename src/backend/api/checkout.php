@@ -127,16 +127,30 @@ if ($file['size'] > $maxSize) {
 // 3e: Generar nombre único y mover archivo al disco
 $timestamp    = date('Ymd_His');                                         // Ej: 20260303_191500
 $fileName     = "{$userId}_{$timestamp}.{$fileExtension}";               // Ej: 7_20260303_191500.jpg
-$uploadDir    = dirname(__DIR__, 2) . '/comprobantes/';                   // Ruta absoluta en servidor
+
+// Usar realpath para evitar problemas con rutas relativas y DIRECTORY_SEPARATOR para Windows
+$baseDir      = dirname(__DIR__, 2);
+$uploadDir    = $baseDir . DIRECTORY_SEPARATOR . 'comprobantes' . DIRECTORY_SEPARATOR;
 $destPath     = $uploadDir . $fileName;
-$rutaRelativa = 'comprobantes/' . $fileName;                             // Lo que se guarda en BD
+$rutaRelativa = 'comprobantes/' . $fileName;                             // Lo que se guarda en BD (siempre con / para web)
 
 if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0755, true); // Crear directorio si no existe
+    if (!mkdir($uploadDir, 0755, true)) {
+        error_log("[checkout.php] No se pudo crear el directorio: " . $uploadDir);
+        echo json_encode(['ok' => false, 'msg' => 'Error: El servidor no tiene permisos para crear la carpeta de comprobantes']);
+        exit;
+    }
+}
+
+if (!is_writable($uploadDir)) {
+    error_log("[checkout.php] El directorio no tiene permisos de escritura: " . $uploadDir);
+    echo json_encode(['ok' => false, 'msg' => 'Error: El servidor no tiene permisos de escritura en la carpeta de comprobantes']);
+    exit;
 }
 
 if (!move_uploaded_file($file['tmp_name'], $destPath)) {
-    echo json_encode(['ok' => false, 'msg' => 'Error al guardar el comprobante en el servidor']);
+    error_log("[checkout.php] Error en move_uploaded_file. Origen: " . $file['tmp_name'] . " Destino: " . $destPath);
+    echo json_encode(['ok' => false, 'msg' => 'Error al guardar el comprobante en el servidor. Verifica los permisos de la carpeta.']);
     exit;
 }
 
@@ -154,7 +168,7 @@ try {
     // Si CUALQUIER paso falla → todo se revierte automáticamente
     $metodoDesc = Validation::sanitizeString($input['metodo'] ?? 'Consignación Bancaria');
 
-    $stmt = $pdo->prepare("SELECT fn_checkout_process(?::INTEGER, ?, ?, ?)");
+    $stmt = $pdo->prepare("SELECT fn_checkout_process(?::SMALLINT, ?, ?, ?)");
     $stmt->execute([$userId, $direccion, $ciudad, $metodoDesc]);
     $result = json_decode($stmt->fetchColumn(), true);
 
@@ -179,8 +193,7 @@ try {
         'order_id' => $result['order_id']
     ]);
 
-}
-catch (Exception $e) {
+} catch (Exception $e) {
     http_response_code(400);
     error_log('[checkout.php] ' . $e->getMessage());
     echo json_encode(['ok' => false, 'msg' => 'Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo.']);

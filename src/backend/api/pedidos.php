@@ -62,9 +62,9 @@ try {
         // Consulta opaca: los 4 parámetros pueden ser NULL
         $stmt = $pdo->prepare("SELECT fn_orders_list(?, ?, ?, ?)");
         $stmt->execute([$estado, $busqueda, $dateFrom, $dateTo]);
-        $pedidos = json_decode($stmt->fetchColumn(), true);
+        $json = $stmt->fetchColumn() ?: '[]';
 
-        echo json_encode(['ok' => true, 'pedidos' => $pedidos]);
+        echo '{"ok":true,"pedidos":' . $json . '}';
 
     }
     elseif ($method === 'PUT') {
@@ -92,7 +92,8 @@ try {
         // de estados: pendiente, confirmado, enviado, cancelado, entregado
         $stmt = $pdo->prepare("SELECT fn_orders_update_status(?::INTEGER, ?)");
         $stmt->execute([$id_orden, $nuevo_estado]);
-        echo json_encode(json_decode($stmt->fetchColumn(), true));
+        $jsonResponse = $stmt->fetchColumn();
+        echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
 
     }
     else {

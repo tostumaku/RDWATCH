@@ -127,13 +127,14 @@ async function cargarFactura() {
             subtotal += parseFloat(prod.subtotal_linea);
         });
 
-        // Totales (Restamos el costo de envío que ya está incluido en total_factura)
+        // Totales
         const ENVIO = 15000;
         const subtotalSinEnvio = subtotal;
+        const totalFinal = subtotalSinEnvio + ENVIO;
 
         facturaContent.getElementById('total-subtotal').textContent = formatPrice(subtotalSinEnvio);
         facturaContent.getElementById('total-envio').textContent = formatPrice(ENVIO);
-        facturaContent.getElementById('total-final').textContent = formatPrice(dataFactura.factura.total_factura);
+        facturaContent.getElementById('total-final').textContent = formatPrice(totalFinal);
 
         // Reemplazar contenido
         container.innerHTML = '';

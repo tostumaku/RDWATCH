@@ -82,6 +82,9 @@ window.addEventListener('pageshow', function (event) {
             }
         }
 
+        // Cargar departamentos ANTES del perfil para que los selects
+        // ya tengan opciones cuando se intente pre-seleccionar la dirección guardada.
+        await cargarDepartamentos();
         await cargarDatosPerfil(user.id);
         await cargarPedidos(user.id);
         await cargarCitas(user.id);
@@ -101,6 +104,7 @@ async function cargarDatosPerfil(userId) {
         });
         const result = await response.json();
         if (result.ok && result.data) {
+            const d = result.data;
             const perfilNombre = document.getElementById('perfilNombre');
             const perfilEmail = document.getElementById('perfilEmail');
             const inputNombre = document.getElementById('inputNombre');
@@ -108,12 +112,33 @@ async function cargarDatosPerfil(userId) {
             const inputTelefono = document.getElementById('inputTelefono');
             const direccionPrincipal = document.getElementById('direccionPrincipal');
 
-            if (perfilNombre) perfilNombre.textContent = result.data.nom_usuario || '';
-            if (perfilEmail) perfilEmail.textContent = result.data.correo_usuario || '';
-            if (inputNombre) inputNombre.value = result.data.nom_usuario || '';
-            if (inputEmail) inputEmail.value = result.data.correo_usuario || '';
-            if (inputTelefono) inputTelefono.value = result.data.num_telefono_usuario || '';
-            if (direccionPrincipal) direccionPrincipal.textContent = result.data.direccion_principal || 'No configurada';
+            if (perfilNombre) perfilNombre.textContent = d.nom_usuario || '';
+            if (perfilEmail) perfilEmail.textContent = d.correo_usuario || '';
+            if (inputNombre) inputNombre.value = d.nom_usuario || '';
+            if (inputEmail) inputEmail.value = d.correo_usuario || '';
+            if (inputTelefono) inputTelefono.value = d.num_telefono_usuario || '';
+            if (direccionPrincipal) direccionPrincipal.textContent = d.direccion_completa || d.direccion_principal || 'No configurada';
+
+            // ── PRE-LLENAR FORMULARIO DE DIRECCIÓN ──
+            // Si el usuario tiene una dirección predeterminada guardada,
+            // pre-seleccionamos los selects de departamento y ciudad.
+            const inputDireccion = document.getElementById('inputDireccion');
+            const inputPostal = document.getElementById('inputPostal');
+            const selectDepto = document.getElementById('inputDepartamento');
+            const selectCiudad = document.getElementById('inputCiudad');
+
+            if (inputDireccion) inputDireccion.value = d.direccion_completa || d.direccion_principal || '';
+            if (inputPostal && d.codigo_postal) inputPostal.value = d.codigo_postal;
+
+            // Pre-seleccionar departamento y disparar carga de ciudades
+            if (selectDepto && d.id_departamento) {
+                selectDepto.value = d.id_departamento;
+                // Cargar ciudades del departamento y luego pre-seleccionar la ciudad guardada
+                if (d.id_ciudad) {
+                    await cargarCiudadesPorDepto(d.id_departamento);
+                    if (selectCiudad) selectCiudad.value = d.id_ciudad;
+                }
+            }
         }
     } catch (error) {
         console.error('Error al cargar datos del perfil:', error);
@@ -178,7 +203,7 @@ async function cargarPedidos(userId) {
                     <tr>
                         <td><strong>#${pedido.id_orden}</strong></td>
                         <td>${pedido.concepto || 'Pedido de productos'}</td>
-                        <td>${pedido.fecha || 'N/A'}</td>
+                        <td>${formatFecha(pedido.fecha)}</td>
                         <td style="font-weight: bold;">$${total.toFixed(2)}</td>
                         <td><span class="badge ${badgeClass}">${capitalizeFirst(estado)}</span></td>
                     </tr>
@@ -262,6 +287,18 @@ function getBadgeClass(estado) {
 function capitalizeFirst(str) {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+// Función auxiliar para formatear fechas ISO → 'DD/MM/YYYY HH:MM'
+function formatFecha(fechaStr) {
+    if (!fechaStr) return 'N/A';
+    // Reemplazar la 'T' del formato ISO 8601 por espacio y recortar milisegundos
+    const clean = fechaStr.replace('T', ' ').split('.')[0]; // '2026-04-20 20:39:12'
+    const [datePart, timePart] = clean.split(' ');
+    if (!datePart) return fechaStr;
+    const [y, m, d] = datePart.split('-');
+    const time = timePart ? timePart.substring(0, 5) : ''; // 'HH:MM'
+    return `${d}/${m}/${y}${time ? ' ' + time : ''}`;
 }
 
 // 🌆 CARGAR DEPARTAMENTOS Y CIUDADES
@@ -404,9 +441,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const fechaInput = document.getElementById('fechaPreferida');
     if (fechaInput) {
-        const today = new Date().toISOString().split('T')[0];
-        fechaInput.min = today;
-        fechaInput.value = today;
+        // Anticipación mínima: 2 días desde hoy
+        const minDate = new Date();
+        minDate.setDate(minDate.getDate() + 2);
+        // Si cae en domingo, mover al lunes
+        if (minDate.getDay() === 0) minDate.setDate(minDate.getDate() + 1);
+        const minDateStr = minDate.toISOString().split('T')[0];
+        fechaInput.min = minDateStr;
+        fechaInput.value = minDateStr;
+
+        // Bloquear domingos en el selector de fecha
+        fechaInput.addEventListener('input', function () {
+            const selected = new Date(this.value + 'T12:00:00');
+            if (selected.getDay() === 0) {
+                showNotification('⚠️ Los domingos no están disponibles. Se ajustó al lunes siguiente.', true);
+                selected.setDate(selected.getDate() + 1);
+                this.value = selected.toISOString().split('T')[0];
+            }
+        });
     }
 
     const inputDepartamento = document.getElementById('inputDepartamento');
@@ -465,7 +517,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     showSection('inicio');
 
     try {
-        await cargarDepartamentos();
+        // NOTA: cargarDepartamentos() ahora se ejecuta en checkAuth()
+        // para garantizar que los selects estén listos antes de pre-seleccionar
+        // la dirección guardada del perfil.
         await cargarServiciosPanel();
     } catch (err) {
         console.error("Error cargando datos iniciales:", err);

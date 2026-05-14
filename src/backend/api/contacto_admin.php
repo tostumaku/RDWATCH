@@ -53,8 +53,8 @@ try {
     $stmt = $pdo->prepare("SELECT fn_contacto_list_admin()");
     $stmt->execute();
 
-    $contactos = json_decode($stmt->fetchColumn(), true);
-    echo json_encode(['ok' => true, 'contactos' => $contactos ?? []]);
+    $json = $stmt->fetchColumn() ?: '[]';
+    echo '{"ok":true,"contactos":' . $json . '}';
 
 } catch (Throwable $e) {
     http_response_code(500);

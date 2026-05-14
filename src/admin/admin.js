@@ -519,10 +519,14 @@ document.addEventListener("DOMContentLoaded", () => {
           id: p.id_orden,
           cliente: p.cliente, // Viene del JOIN con tab_Usuarios
           email: p.email_cliente,
+          telefono: p.telefono_cliente || 'No registrado',
           estado: p.estado_orden,
           total: parseFloat(p.total_orden),
           fecha: p.fecha,
-          tiene_comprobante: p.tiene_comprobante == 1
+          tiene_comprobante: p.tiene_comprobante == 1,
+          direccion: p.direccion_envio || 'No especificada',
+          ciudad: p.ciudad_envio || 'N/A',
+          departamento: p.departamento_envio || 'N/A'
         }));
 
         drawPedidos();
@@ -578,6 +582,7 @@ document.addEventListener("DOMContentLoaded", () => {
              ${p.tiene_comprobante
           ? `<a href="../backend/api/get_comprobante.php?id_orden=${p.id}" target="_blank" class="button button-small button-outline" title="Ver Comprobante"><i class="fas fa-file-invoice-dollar"></i></a>`
           : '<span style="color:#ccc;font-size:0.8em;">-</span>'}
+             <button class="button button-small button-outline" onclick="abrirModalDetallePedido(${p.id})" title="Ver Detalles"><i class="fas fa-eye"></i></button>
           </td>
           <td style="font-weight:bold">$${p.total.toFixed(2)}</td>
         </tr>`)
@@ -609,6 +614,27 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error('Error al cambiar estado:', err);
       showNotification('❌ Error de conexión');
     }
+  };
+
+  window.abrirModalDetallePedido = function(id) {
+      const p = pedidos.find(x => x.id === id);
+      if(!p) return;
+      
+      const elCliente = document.getElementById("detallePedidoCliente");
+      const elEmail = document.getElementById("detallePedidoEmail");
+      const elTelefono = document.getElementById("detallePedidoTelefono");
+      const elDir = document.getElementById("detallePedidoDireccion");
+      const elCiudad = document.getElementById("detallePedidoCiudad");
+      const elDepto = document.getElementById("detallePedidoDepartamento");
+      
+      if(elCliente) elCliente.textContent = p.cliente;
+      if(elEmail) elEmail.textContent = p.email;
+      if(elTelefono) elTelefono.textContent = p.telefono;
+      if(elDir) elDir.textContent = p.direccion;
+      if(elCiudad) elCiudad.textContent = p.ciudad;
+      if(elDepto) elDepto.textContent = p.departamento;
+      
+      openModal("#modalDetallePedido");
   };
 
   /* ==========================
@@ -1348,9 +1374,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <td>${s.nom_subcategoria}</td>
       <td><span class="badge ${s.estado ? 'active' : 'inactive'}">${s.estado ? 'Activa' : 'Inactiva'}</span></td>
       <td class="actions">
-        <button class="button button-outline" onclick="editarSubcategoria(${s.id_categoria}, ${s.id_subcategoria})">
-          <i class="fas fa-pen"></i>
-        </button>
+        <button class="button button-outline" onclick="editarSubcategoria(${s.id_categoria}, ${s.id_subcategoria})"><i class="fas fa-pen"></i></button>
         ${s.estado
           ? `<button class="button button-danger" onclick="desactivarSubcategoria(${s.id_categoria}, ${s.id_subcategoria})" title="Desactivar"><i class="fas fa-ban"></i></button>`
           : `<button class="button button-success" onclick="reactivarSubcategoria(${s.id_categoria}, ${s.id_subcategoria})" title="Reactivar"><i class="fas fa-undo"></i></button>`
@@ -1556,7 +1580,8 @@ document.addEventListener("DOMContentLoaded", () => {
           estado:          c.estado || 'pendiente',
           // Datos extra solo disponibles en contactos
           correo:          c.correo_remitente,
-          telefono:        c.telefono_remitente
+          telefono:        c.telefono_remitente,
+          notas:           c.mensaje
         }));
 
         citas = [...citasNormales, ...citasContacto];
@@ -1649,8 +1674,8 @@ document.addEventListener("DOMContentLoaded", () => {
           <td>
               <span class="badge ${badgeClass}" style="padding: 4px 8px; border-radius: 4px; font-weight: bold; background: ${badgeClass === 'success' ? '#28a745' : badgeClass === 'warning' ? '#ffc107' : badgeClass === 'danger' ? '#dc3545' : '#6c757d'}; color: ${badgeClass === 'warning' ? '#000' : '#fff'};"> ${est.toUpperCase()}</span>
           </td>
-          <td>
-              <span style="color: #999;">- Sin adjuntos -</span>
+          <td style="max-width: 250px; white-space: normal; font-size: 0.85em; color: #555;">
+              ${cita.notas ? cita.notas : '<span style="color: #999;">- Sin notas -</span>'}
           </td>
           <td>${celdaAcciones}</td>
       `;
