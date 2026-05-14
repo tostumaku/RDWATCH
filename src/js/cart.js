@@ -181,15 +181,22 @@ function updateCartDisplay() {
     const subtotalSpan = document.getElementById('cart-subtotal');
     const checkoutBtn = document.getElementById('btn-procede-checkout');
 
-    const countSpans = document.querySelectorAll('.cart-count, #cart-item-count');
+    const countSpans = document.querySelectorAll('.cart-count'); // Selector unificado por clase
 
     let total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     let qty = cart.reduce((acc, item) => acc + item.quantity, 0);
 
     countSpans.forEach(span => {
         span.textContent = qty;
-        span.classList.add('pop-animation');
-        setTimeout(() => span.classList.remove('pop-animation'), 300);
+        
+        // Manejo de visibilidad: ocultar si es 0
+        if (qty > 0) {
+            span.style.display = 'inline-block';
+            span.classList.add('pop-animation');
+            setTimeout(() => span.classList.remove('pop-animation'), 300);
+        } else {
+            span.style.display = 'none';
+        }
     });
 
     if (list) {
