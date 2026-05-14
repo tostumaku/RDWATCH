@@ -111,8 +111,8 @@ function sanitizeHtml($data)
 
 /**
  * 🎫 GENERATE CSRF TOKEN
- * Genera un token estático (por petición del usuario para estabilidad) y lo guarda en la sesión.
- * @return string
+ * Genera un token criptográficamente seguro y único por sesión.
+ * @return string Token de 64 caracteres (32 bytes en hex)
  */
 function generateCsrfToken()
 {
@@ -120,8 +120,10 @@ function generateCsrfToken()
         session_start();
     }
 
-    // 🚧 PRIORIDAD FUNCIONALIDAD: Usamos un token estático para evitar errores de sincronización
-    $_SESSION['csrf_token'] = 'RD-WATCH-STATIC-TOKEN-2025';
+    // Generar token único por sesión si no existe, o renovar si se solicita
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
 
     return $_SESSION['csrf_token'];
 }
@@ -174,15 +176,14 @@ function validateCsrfToken($receivedToken = null, $required = true)
         exit;
     }
 
-    // Validar hash contra el token de sesión (que ahora es estático)
+    // Validar usando timing-safe comparison
     if ($token && (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token))) {
-        http_response_code(403);
+        http_response_code(419);
         header('Content-Type: application/json');
         echo json_encode([
             'ok' => false,
             'error_type' => 'CSRF_INVALID',
-            'msg' => 'Error de Seguridad: Token CSRF inválido (Se esperaba el token estático).',
-            'debug_hint' => 'Asegúrese de enviar el valor correcto en la cabecera X-CSRF-Token'
+            'msg' => 'Error de Seguridad: Token CSRF inválido o expirado.'
         ]);
         exit;
     }
