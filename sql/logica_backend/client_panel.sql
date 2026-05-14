@@ -82,6 +82,9 @@ DECLARE
     v_result JSON; -- Contenedor de salida
 BEGIN
     -- Selección estructurada de atributos no sensibles.
+    -- JOIN con Direcciones_Envio → Ciudades → Departamentos para
+    -- devolver la dirección completa con datos geográficos,
+    -- permitiendo al frontend pre-seleccionar los dropdowns.
     SELECT row_to_json(t) INTO v_result FROM (
         SELECT
             u.id_usuario,
@@ -90,9 +93,23 @@ BEGIN
             u.num_telefono_usuario,
             u.direccion_principal,
             u.activo,
-            u.fecha_registro
+            u.fecha_registro,
+            -- Datos de la dirección predeterminada (si existe)
+            d.direccion_completa,
+            c.id_ciudad,
+            c.nombre_ciudad,
+            c.codigo_postal,
+            dep.id_departamento,
+            dep.nombre_departamento
         FROM tab_Usuarios u
+        LEFT JOIN tab_Direcciones_Envio d
+            ON u.id_usuario = d.id_usuario AND d.es_predeterminada = TRUE
+        LEFT JOIN tab_Ciudades c
+            ON d.id_ciudad = c.id_ciudad
+        LEFT JOIN tab_Departamentos dep
+            ON c.id_departamento = dep.id_departamento
         WHERE u.id_usuario = p_user_id -- Filtro de propiedad única
+        LIMIT 1
     ) t;
 
     -- Validación de existencia previa al retorno.
@@ -323,8 +340,6 @@ BEGIN
         WHERE id_direccion = v_existing_id;
     ELSE
         -- Si no existe, creamos una nueva.
-        -- LOCK previene condición de carrera en generación concurrente de IDs.
-        LOCK TABLE tab_Direcciones_Envio IN EXCLUSIVE MODE;
         SELECT COALESCE(MAX(d.id_direccion), 0) + 1 INTO v_new_id FROM tab_Direcciones_Envio d;
         INSERT INTO tab_Direcciones_Envio (
             id_direccion, id_usuario, direccion_completa, id_ciudad, codigo_postal, es_predeterminada, fec_insert, usr_insert
@@ -465,8 +480,6 @@ BEGIN
     END IF;
 
     -- PASO 3: Generación de identificador secuencial.
-    -- LOCK previene condición de carrera en generación concurrente de IDs.
-    LOCK TABLE tab_Opiniones IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(o.id_opinion), 0) + 1 INTO v_new_id FROM tab_Opiniones o;
 
     -- PASO 4: Inserción atómica del testimonio.

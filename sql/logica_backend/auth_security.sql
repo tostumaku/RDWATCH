@@ -168,8 +168,6 @@ BEGIN
 
     -- AUTO-GENERAR ID: Obtiene el máximo ID actual y suma 1
     -- COALESCE maneja el caso de tabla vacía (retorna 0 si no hay registros)
-    -- LOCK previene condición de carrera en generación concurrente de IDs.
-    LOCK TABLE tab_Usuarios IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(u.id_usuario), 0) + 1 INTO v_new_id FROM tab_Usuarios u;
 
     -- INSERCIÓN: Crea el nuevo usuario con valores por defecto seguros
@@ -361,7 +359,9 @@ BEGIN
             u.direccion_principal,  -- Dirección guardada en la tabla de usuarios
             -- Priorizamos la predeterminada; si no hay, devolvemos lo que haya en direccion_principal.
             COALESCE(d.direccion_completa, u.direccion_principal) as direccion_completa,
-            c.nombre_ciudad         -- Nombre de la ciudad asociada
+            c.nombre_ciudad,        -- Nombre de la ciudad asociada
+            dep.id_departamento,    -- ID del departamento (para pre-seleccionar dropdown en checkout)
+            dep.nombre_departamento -- Nombre del departamento
         FROM tab_Usuarios u
         -- LEFT JOIN: Buscamos la predeterminada en la agenda
         LEFT JOIN tab_Direcciones_Envio d
@@ -370,6 +370,9 @@ BEGIN
         -- LEFT JOIN: Ciudad relacionada
         LEFT JOIN tab_Ciudades c
             ON d.id_ciudad = c.id_ciudad
+        -- LEFT JOIN: Departamento de la ciudad
+        LEFT JOIN tab_Departamentos dep
+            ON c.id_departamento = dep.id_departamento
         WHERE u.id_usuario = p_uid
         LIMIT 1
     ) t;
@@ -457,8 +460,6 @@ DECLARE
     v_new_id tab_Rate_Limits.id_rate_limit%TYPE;
 BEGIN
     -- Auto-generar ID siguiendo el patrón del proyecto (sin SERIAL)
-    -- LOCK previene condición de carrera en generación concurrente de IDs.
-    LOCK TABLE tab_Rate_Limits IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_rate_limit), 0) + 1 INTO v_new_id FROM tab_Rate_Limits;
 
     INSERT INTO tab_Rate_Limits (

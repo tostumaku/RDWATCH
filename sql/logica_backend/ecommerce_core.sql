@@ -105,8 +105,6 @@ BEGIN
     -- PASO 2: Inicialización en caso de primer acceso.
     IF v_cart_id IS NULL THEN
         -- Generación manual de ID: Buscamos el máximo actual + 1.
-        -- LOCK previene condición de carrera en generación concurrente de IDs.
-        LOCK TABLE tab_Carrito IN EXCLUSIVE MODE;
         SELECT COALESCE(MAX(id_carrito), 0) + 1 INTO v_cart_id FROM tab_Carrito;
         
         INSERT INTO tab_Carrito (
@@ -224,8 +222,6 @@ BEGIN
         WHERE id_carrito = p_cart_id AND id_producto = p_prod_id;
     ELSE
         -- OPERACIÓN 2: Nueva inserción.
-        -- LOCK previene condición de carrera en generación concurrente de IDs.
-        LOCK TABLE tab_Carrito_Detalle IN EXCLUSIVE MODE;
         SELECT COALESCE(MAX(id_carrito_detalle), 0) + 1 INTO v_det_id FROM tab_Carrito_Detalle;
         
         INSERT INTO tab_Carrito_Detalle (
@@ -476,8 +472,6 @@ BEGIN
     END IF;
 
     -- PASO 4: Generación de Entidad Orden (Maestro).
-    -- LOCK previene condición de carrera en generación concurrente de IDs.
-    LOCK TABLE tab_Orden IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_orden), 0) + 1 INTO v_order_id FROM tab_Orden;
     v_concepto := LEFT('Relojería RD-Watch: Despacho a ' || p_direccion, 100);
 
@@ -488,8 +482,6 @@ BEGIN
     );
 
     -- PASO 5: Registro Contable (Facturación).
-    -- LOCK previene condición de carrera en generación concurrente de IDs.
-    LOCK TABLE tab_Facturas IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_factura), 0) + 1 INTO v_invoice_id FROM tab_Facturas;
     INSERT INTO tab_Facturas (
         id_factura, id_orden, id_usuario, fecha_emision, total_factura, estado_factura, fec_insert, usr_insert
@@ -508,8 +500,6 @@ BEGIN
         v_subtotal := v_item.cantidad * v_item.precio;
 
         -- Registro en Detalle de Orden (ID manual secuencial).
-        -- LOCK previene condición de carrera en generación concurrente de IDs.
-        LOCK TABLE tab_Detalle_Orden IN EXCLUSIVE MODE;
         INSERT INTO tab_Detalle_Orden (
             id_detalle_orden, id_orden, id_producto, cantidad, precio_unitario, fec_insert, usr_insert
         ) VALUES (
@@ -518,8 +508,6 @@ BEGIN
         );
 
         -- Registro en Detalle de Factura (ID manual secuencial).
-        -- LOCK previene condición de carrera en generación concurrente de IDs.
-        LOCK TABLE tab_Detalle_Factura IN EXCLUSIVE MODE;
         INSERT INTO tab_Detalle_Factura (
             id_detalle_factura, id_factura, id_producto, cantidad, precio_unitario, subtotal_linea, fec_insert, usr_insert
         ) VALUES (
@@ -543,8 +531,6 @@ BEGIN
 
     IF v_addr_id IS NULL THEN
         -- Normalización de Ciudad y creación de nueva dirección (ID manual).
-        -- LOCK previene condición de carrera en generación concurrente de IDs.
-        LOCK TABLE tab_Direcciones_Envio IN EXCLUSIVE MODE;
         SELECT COALESCE(MAX(id_direccion), 0) + 1 INTO v_addr_id FROM tab_Direcciones_Envio;
 
         SELECT ci.id_ciudad INTO v_city_id
@@ -562,8 +548,6 @@ BEGIN
     END IF;
 
     -- PASO 8: Planificación de Despacho (Logística).
-    -- LOCK previene condición de carrera en generación concurrente de IDs.
-    LOCK TABLE tab_Envios IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_envio), 0) + 1 INTO v_shipping_id FROM tab_Envios;
     INSERT INTO tab_Envios (
         id_envio, id_orden, id_direccion_envio, metodo_envio, estado_envio, fecha_envio, fecha_entrega_estimada, costo_envio, fec_insert, usr_insert
@@ -572,8 +556,6 @@ BEGIN
     );
 
     -- PASO 9: Inicialización del Recibo de Pago.
-    -- LOCK previene condición de carrera en generación concurrente de IDs.
-    LOCK TABLE tab_Pagos IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_pago), 0) + 1 INTO v_payment_id FROM tab_Pagos;
     INSERT INTO tab_Pagos (
         id_pago, id_orden, monto, id_metodo_pago, estado_pago, fecha_pago, fec_insert, usr_insert
@@ -645,15 +627,23 @@ BEGIN
             o.id_orden,              -- Referencia única
             u.nom_usuario AS cliente, -- Nombre del comprador
             u.correo_usuario AS email_cliente, -- Canal de contacto
+            u.num_telefono_usuario AS telefono_cliente, -- Teléfono de contacto
             o.fecha_orden AS fecha,  -- Momento de la compra
             o.estado_orden,          -- Situación logística
             o.total_orden,           -- Monto transaccional
             -- Verificación de existencia de comprobante (0/1) para el UI.
             (CASE WHEN p.comprobante_ruta IS NOT NULL THEN 1 ELSE 0 END) AS tiene_comprobante,
-            p.estado_pago            -- Situación financiera
+            p.estado_pago,           -- Situación financiera
+            de.direccion_completa AS direccion_envio,
+            ci.nombre_ciudad AS ciudad_envio,
+            dep.nombre_departamento AS departamento_envio -- Departamento geográfico
         FROM tab_Orden o
         JOIN tab_Usuarios u ON o.id_usuario = u.id_usuario -- Nexo con el cliente
         LEFT JOIN tab_Pagos p ON o.id_orden = p.id_orden -- Nexo con la caja (opcional)
+        LEFT JOIN tab_Envios e ON o.id_orden = e.id_orden
+        LEFT JOIN tab_Direcciones_Envio de ON e.id_direccion_envio = de.id_direccion
+        LEFT JOIN tab_Ciudades ci ON de.id_ciudad = ci.id_ciudad
+        LEFT JOIN tab_Departamentos dep ON ci.id_departamento = dep.id_departamento -- Nexo geográfico
         WHERE
             -- Aplicación de filtros opcionales.
             (p_estado IS NULL OR o.estado_orden = p_estado)
@@ -941,9 +931,7 @@ BEGIN
 
     -- ═══════════════════════════════════════════
     -- INSERCIÓN: Registro formal en la agenda
-    -- LOCK previene condición de carrera en generación concurrente de IDs.
     -- ═══════════════════════════════════════════
-    LOCK TABLE tab_Reservas IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(r.id_reserva), 0) + 1 INTO v_new_id FROM tab_Reservas r;
 
     INSERT INTO tab_Reservas (
@@ -1087,8 +1075,6 @@ BEGIN
     END IF;
 
     -- GENERACIÓN DE PK
-    -- LOCK previene condición de carrera en generación concurrente de IDs.
-    LOCK TABLE tab_Contacto IN EXCLUSIVE MODE;
     SELECT COALESCE(MAX(id_contacto), 0) + 1 INTO v_new_id FROM tab_Contacto;
 
     -- INSERCIÓN EN TAB_CONTACTO
