@@ -28,6 +28,7 @@ Este documento mantiene un registro persistente del contexto, decisiones globale
 - **Arquitectura de Software Documentada (06/05/2026):** Se creó un diagrama interactivo SVG (`arquitectura_rdwatch.html`) que expone la arquitectura estricta en 3 capas de RD_WATCH: Frontend (Vanilla JS sin frameworks pesados), Backend (PHP Puro como proxy ciego) y PostgreSQL (capa lógica transaccional). Además, se consolidaron los argumentos de la ventaja competitiva para presentaciones técnicas (Rendimiento Nativo vs React, y Sesiones HttpOnly seguras vs JWT en localStorage).
 - **Eliminación de Bloqueos Explícitos (06/05/2026):** Se retiraron las sentencias `LOCK TABLE ... IN EXCLUSIVE MODE` de las 15 funciones PL/pgSQL transaccionales (`ecommerce_core.sql`, `auth_security.sql`, `client_panel.sql`) que manejan la autogeneración de IDs (`MAX() + 1`). Esto permite un funcionamiento fluido sin bloqueos de tabla completos.
 - **Refactorización Modular del Frontend (08/05/2026):** Se descompuso el archivo monolítico `script.js` (2000+ líneas) en 6 módulos funcionales independientes (`utils.js`, `auth.js`, `shop.js`, `cart.js`, `checkout.js`, `landing.js`). Se eliminó código duplicado (Google Auth y Menú Móvil) y se optimizó la carga de recursos, donde cada página HTML solo importa los módulos necesarios. Se mantuvo el uso de "Scripts Tradicionales" con carga `defer` para compatibilidad, exponiendo puentes globales controlados en `window`.
+- **Persistencia Geográfica de Direcciones (13/05/2026):** Se resolvió la pérdida de datos de departamento/ciudad en el perfil de usuario y checkout. Se rediseñó el flujo de datos: las funciones SQL (`fn_user_get_profile`, `fn_auth_get_session`) ahora realizan JOINs con las tablas geográficas para devolver IDs y nombres. En el frontend, se sincronizó la carga de opciones dinámicas con la pre-selección de valores, eliminando race conditions mediante el uso de `sessionStorage` como puente de datos geo-referenciados entre módulos.
 
 
 ## ⚠️ 4. Limitaciones Técnicas Conocidas
@@ -64,7 +65,10 @@ Este documento mantiene un registro persistente del contexto, decisiones globale
 - [x] **Eliminación de LOCK TABLE (06/05/2026):** Auditoría y retiro de las 15 sentencias `LOCK TABLE` del código SQL base, liberando la capa de persistencia de bloqueos pesados.
 - [x] **Fix Errores Panel Admin (06/05/2026):** Se resolvieron las excepciones SQLSTATE al intentar eliminar entidades en el panel. En `categorias.php` se corrigió la falta del segundo parámetro audit (`admin_panel`) requerido por `fn_cat_delete_categoria`. En `servicios.php` se corrigió el type casting a `?::SMALLINT` en `fn_cat_delete_servicio` coincidiendo exactamente con su firma PL/pgSQL. 
 - [x] **UI Modal de Productos (06/05/2026):** Arreglado el desbordamiento visual de los `<select>` y campos de texto en el popup de creación de productos. Se forzó `width: 100%` y `box-sizing: border-box` a los inputs en `admin.css`.
-- [x] **Refactorización de script.js (08/05/2026):** Modularización completa del frontend. Se dividió el monolito en 6 archivos, se eliminó la duplicidad de Google Auth y menú móvil, y se actualizaron todas las referencias HTML (`index`, `comercio`, `factura`, `admin`, `legal`).
+- [x] **Visualización de Notas en Citas (12/05/2026):** Se habilitó la lectura de notas de clientes en el panel de administración. Se reemplazó la columna obsoleta "Foto" por "Notas", integrando también los mensajes del formulario de contacto para una gestión centralizada. Se aplicó truncado visual en "Servicio" y vista completa en "Notas" con tipografía optimizada.
+- [x] **Normalización de Contactos en Agenda (12/05/2026):** Las solicitudes del formulario de aterrizaje ahora se visualizan en la misma tabla de Citas, identificadas con un badge púrpura "CONTACTO", permitiendo al administrador leer el mensaje completo sin cambiar de sección.
+- [x] **Fix Persistencia de Dirección (13/05/2026):** Resolución integral del error donde el usuario perdía su ciudad/departamento al recargar el panel. Se sincronizaron las 3 capas: SQL (nuevos JOINs), PHP (envío de IDs de depto) y JS (población asíncrona de selectores en panel y checkout).
+- [x] **Ampliación de Detalles de Pedido Admin (13/05/2026):** Se integró la visualización del teléfono del cliente y el departamento geográfico de envío en el modal de detalles del pedido dentro del panel de administración. Esto implicó una actualización de 3 capas: se sumó un nuevo JOIN a `tab_Departamentos` en `fn_orders_list` (`ecommerce_core.sql`), se actualizó el mapeo de variables en `admin.js`, y se añadieron los campos estáticos al modal en `admin.html`.
 
 ---
 
@@ -76,4 +80,4 @@ Este documento mantiene un registro persistente del contexto, decisiones globale
     - **Beneficio:** Atención 24/7 y experiencia de usuario premium (Concierge Digital).
 
 ---
-*Última edición técnica: Viernes 08 Mayo 2026 — Refactorización modular del frontend y actualización de arquitectura.*
+*Última edición técnica: Miércoles 13 Mayo 2026 — Corrección de persistencia geográfica y ampliación de detalles en panel admin.*
