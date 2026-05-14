@@ -9,12 +9,18 @@
 /* reset menor para inputs del admin */
 .input,
 select,
-textarea {
+textarea,
+input[type="text"],
+input[type="number"],
+input[type="url"],
+input[type="password"] {
   font-family: var(--font-body);
   border: 1px solid #ddd;
   border-radius: 6px;
   padding: 10px 12px;
   outline: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Quitar flechas de los input tipo number (ej. en modales) */
