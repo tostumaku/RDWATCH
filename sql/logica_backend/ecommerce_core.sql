@@ -628,7 +628,7 @@ BEGIN
             u.nom_usuario AS cliente, -- Nombre del comprador
             u.correo_usuario AS email_cliente, -- Canal de contacto
             u.num_telefono_usuario AS telefono_cliente, -- Teléfono de contacto
-            o.fecha_orden AS fecha,  -- Momento de la compra
+            TO_CHAR(o.fecha_orden, 'YYYY-MM-DD HH24:MI:SS') AS fecha,  -- Momento de la compra (sin milisegundos)
             o.estado_orden,          -- Situación logística
             o.total_orden,           -- Monto transaccional
             -- Verificación de existencia de comprobante (0/1) para el UI.

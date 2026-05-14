@@ -200,11 +200,11 @@ BEGIN
     SELECT row_to_json(t) INTO v_result FROM (
         SELECT
             f.id_factura,         -- PK Contable
-            f.fecha_emision,      -- Instante de facturación
+            TO_CHAR(f.fecha_emision, 'YYYY-MM-DD HH24:MI:SS') AS fecha_emision,      -- Instante de facturación (sin milisegundos)
             f.total_factura,      -- Monto liquidado
             o.id_orden,           -- PK Comercial
             o.estado_orden,       -- Tracking status
-            o.fecha_orden,        -- Instante de compra
+            TO_CHAR(o.fecha_orden, 'YYYY-MM-DD HH24:MI:SS') AS fecha_orden,        -- Instante de compra (sin milisegundos)
             o.concepto,           -- Glosa descriptiva
             u.nom_usuario,        -- Ficha de identidad
             u.correo_usuario,

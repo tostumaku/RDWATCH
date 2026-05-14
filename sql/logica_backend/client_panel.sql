@@ -154,7 +154,7 @@ BEGIN
         SELECT
             o.id_orden,             -- Referencia de la transacción
             o.concepto,             -- Glosa descriptiva
-            o.fecha_orden AS fecha, -- Instante del pedido
+            TO_CHAR(o.fecha_orden, 'YYYY-MM-DD HH24:MI:SS') AS fecha, -- Instante del pedido (sin milisegundos)
             o.total_orden,          -- Monto final pagado
             o.estado_orden          -- Situación (pendiente/entregado/etc)
         FROM tab_Orden o
