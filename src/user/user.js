@@ -82,6 +82,9 @@ window.addEventListener('pageshow', function (event) {
             }
         }
 
+        // Cargar departamentos ANTES del perfil para que los selects
+        // ya tengan opciones cuando se intente pre-seleccionar la dirección guardada.
+        await cargarDepartamentos();
         await cargarDatosPerfil(user.id);
         await cargarPedidos(user.id);
         await cargarCitas(user.id);
@@ -101,6 +104,7 @@ async function cargarDatosPerfil(userId) {
         });
         const result = await response.json();
         if (result.ok && result.data) {
+            const d = result.data;
             const perfilNombre = document.getElementById('perfilNombre');
             const perfilEmail = document.getElementById('perfilEmail');
             const inputNombre = document.getElementById('inputNombre');
@@ -108,12 +112,33 @@ async function cargarDatosPerfil(userId) {
             const inputTelefono = document.getElementById('inputTelefono');
             const direccionPrincipal = document.getElementById('direccionPrincipal');
 
-            if (perfilNombre) perfilNombre.textContent = result.data.nom_usuario || '';
-            if (perfilEmail) perfilEmail.textContent = result.data.correo_usuario || '';
-            if (inputNombre) inputNombre.value = result.data.nom_usuario || '';
-            if (inputEmail) inputEmail.value = result.data.correo_usuario || '';
-            if (inputTelefono) inputTelefono.value = result.data.num_telefono_usuario || '';
-            if (direccionPrincipal) direccionPrincipal.textContent = result.data.direccion_principal || 'No configurada';
+            if (perfilNombre) perfilNombre.textContent = d.nom_usuario || '';
+            if (perfilEmail) perfilEmail.textContent = d.correo_usuario || '';
+            if (inputNombre) inputNombre.value = d.nom_usuario || '';
+            if (inputEmail) inputEmail.value = d.correo_usuario || '';
+            if (inputTelefono) inputTelefono.value = d.num_telefono_usuario || '';
+            if (direccionPrincipal) direccionPrincipal.textContent = d.direccion_completa || d.direccion_principal || 'No configurada';
+
+            // ── PRE-LLENAR FORMULARIO DE DIRECCIÓN ──
+            // Si el usuario tiene una dirección predeterminada guardada,
+            // pre-seleccionamos los selects de departamento y ciudad.
+            const inputDireccion = document.getElementById('inputDireccion');
+            const inputPostal = document.getElementById('inputPostal');
+            const selectDepto = document.getElementById('inputDepartamento');
+            const selectCiudad = document.getElementById('inputCiudad');
+
+            if (inputDireccion) inputDireccion.value = d.direccion_completa || d.direccion_principal || '';
+            if (inputPostal && d.codigo_postal) inputPostal.value = d.codigo_postal;
+
+            // Pre-seleccionar departamento y disparar carga de ciudades
+            if (selectDepto && d.id_departamento) {
+                selectDepto.value = d.id_departamento;
+                // Cargar ciudades del departamento y luego pre-seleccionar la ciudad guardada
+                if (d.id_ciudad) {
+                    await cargarCiudadesPorDepto(d.id_departamento);
+                    if (selectCiudad) selectCiudad.value = d.id_ciudad;
+                }
+            }
         }
     } catch (error) {
         console.error('Error al cargar datos del perfil:', error);
@@ -492,7 +517,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     showSection('inicio');
 
     try {
-        await cargarDepartamentos();
+        // NOTA: cargarDepartamentos() ahora se ejecuta en checkAuth()
+        // para garantizar que los selects estén listos antes de pre-seleccionar
+        // la dirección guardada del perfil.
         await cargarServiciosPanel();
     } catch (err) {
         console.error("Error cargando datos iniciales:", err);
