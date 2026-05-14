@@ -94,7 +94,7 @@ try {
         // 2. Validación de rango (1-5)
         // 3. Auto-generación de ID
         // 4. Auditoría (usr_insert, fec_insert)
-        $stmt = $pdo->prepare("SELECT fn_reviews_create(?::INTEGER, ?::smallint, ?)");
+        $stmt = $pdo->prepare("SELECT fn_reviews_create(?::SMALLINT, ?::SMALLINT, ?)");
         $stmt->execute([$id_usuario, $calificacion, $comentario]);
         $jsonResponse = $stmt->fetchColumn();
         echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);

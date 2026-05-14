@@ -57,7 +57,7 @@ try {
             exit;
         }
 
-        $stmt = $pdo->prepare("SELECT fn_geo_ciudades(?::INTEGER)");
+        $stmt = $pdo->prepare("SELECT fn_geo_ciudades(?::SMALLINT)");
         $stmt->execute([$id_depto]);
         $ciudades = json_decode($stmt->fetchColumn(), true);
 

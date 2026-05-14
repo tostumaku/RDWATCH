@@ -68,7 +68,7 @@ try {
     // fn_cart_get_or_create busca un carrito con estado 'activo'
     // Si no existe, crea uno automáticamente
     // Retorna: {id_carrito: 123, created: true/false}
-    $cartStmt = $pdo->prepare("SELECT fn_cart_get_or_create(?::INTEGER)");
+    $cartStmt = $pdo->prepare("SELECT fn_cart_get_or_create(?::SMALLINT)");
     $cartStmt->execute([$userId]);
     $cartData = json_decode($cartStmt->fetchColumn(), true);
     $carritoId = $cartData['id_carrito'];
@@ -106,7 +106,7 @@ try {
             }
 
             // Consulta 100% opaca
-            $stmt = $pdo->prepare("SELECT fn_cart_add_item(?::INTEGER, ?::INTEGER, ?::INTEGER)");
+            $stmt = $pdo->prepare("SELECT fn_cart_add_item(?::INTEGER, ?::SMALLINT, ?::INTEGER)");
             $stmt->execute([$carritoId, $id_prod, $qty]);
             $jsonResponse = $stmt->fetchColumn();
             echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
@@ -128,7 +128,7 @@ try {
                 exit;
             }
 
-            $stmt = $pdo->prepare("SELECT fn_cart_update_qty(?::INTEGER, ?::INTEGER, ?::INTEGER)");
+            $stmt = $pdo->prepare("SELECT fn_cart_update_qty(?::INTEGER, ?::SMALLINT, ?::INTEGER)");
             $stmt->execute([$carritoId, $id_prod, $qty]);
             $jsonResponse = $stmt->fetchColumn();
             echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
@@ -146,7 +146,7 @@ try {
 
             if ($id_prod) {
                 // Eliminación quirúrgica de UN producto
-                $stmt = $pdo->prepare("SELECT fn_cart_remove_item(?::INTEGER, ?::INTEGER)");
+                $stmt = $pdo->prepare("SELECT fn_cart_remove_item(?::INTEGER, ?::SMALLINT)");
                 $stmt->execute([$carritoId, $id_prod]);
             }
             else {

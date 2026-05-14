@@ -122,7 +122,7 @@ try {
                 exit;
             }
 
-            $stmt = $pdo->prepare("SELECT fn_cat_delete_marca(?::INTEGER, ?::VARCHAR)");
+            $stmt = $pdo->prepare("SELECT fn_cat_delete_marca(?::SMALLINT, ?::VARCHAR)");
             $stmt->execute([$idMarca, 'admin_panel']);
             $jsonResponse = $stmt->fetchColumn();
             echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);

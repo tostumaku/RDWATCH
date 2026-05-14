@@ -72,7 +72,7 @@ try {
         }
         else {
             // Cliente solo ve sus propias citas
-            $stmt = $pdo->prepare("SELECT fn_citas_list_cliente(?::INTEGER)");
+            $stmt = $pdo->prepare("SELECT fn_citas_list_cliente(?::SMALLINT)");
             $stmt->execute([$user_id]);
             $json = $stmt->fetchColumn() ?: '[]';
             echo '{"ok":true,"citas":' . $json . '}';

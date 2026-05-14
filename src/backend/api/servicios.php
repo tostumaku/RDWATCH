@@ -136,7 +136,7 @@ try {
                 exit;
             }
 
-            $stmt = $pdo->prepare("SELECT fn_cat_delete_servicio(?::BIGINT, ?::VARCHAR)");
+            $stmt = $pdo->prepare("SELECT fn_cat_delete_servicio(?::SMALLINT, ?::VARCHAR)");
             $stmt->execute([$sid, 'admin_panel']);
             $jsonResponse = $stmt->fetchColumn();
             echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);

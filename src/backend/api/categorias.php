@@ -206,8 +206,8 @@ try {
                     exit;
                 }
 
-                $stmt = $pdo->prepare("SELECT fn_cat_delete_categoria(?::SMALLINT)");
-                $stmt->execute([$idCat]);
+                $stmt = $pdo->prepare("SELECT fn_cat_delete_categoria(?::SMALLINT, ?::VARCHAR)");
+                $stmt->execute([$idCat, 'admin_panel']);
                 $jsonResponse = $stmt->fetchColumn();
                 echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
                 break;

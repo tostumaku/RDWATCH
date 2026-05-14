@@ -154,7 +154,7 @@ try {
                 exit;
             }
 
-            $stmt = $pdo->prepare("SELECT fn_cat_delete_producto(?::INTEGER)");
+            $stmt = $pdo->prepare("SELECT fn_cat_delete_producto(?::SMALLINT)");
             $stmt->execute([$pid]);
             $jsonResponse = $stmt->fetchColumn();
             echo $jsonResponse ? $jsonResponse : json_encode(['ok' => false, 'msg' => 'Respuesta vacía de BD']);
