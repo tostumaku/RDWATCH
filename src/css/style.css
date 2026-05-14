@@ -14,6 +14,7 @@
     /* Rojo Carmesí (Detalles mecánicos) */
 
     --success-color: #009D71;
+    --error-color: #dc3545; /* Rojo para alertas y contadores */
 
     --text-color: #1A1A1A;
     /* Casi negro para máximo contraste */
@@ -3036,6 +3037,17 @@ section {
     padding: 4px 8px;
     font-size: 0.75rem;
     font-weight: 700;
+    display: none;
+}
+
+.pop-animation {
+    animation: pop-animation 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes pop-animation {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
 }
 
 /* Sidebar del Carrito */
