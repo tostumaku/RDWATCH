@@ -29,7 +29,7 @@ try {
         'ok'     => true,
         'public' => [
             'years'        => (int)($data['years']        ?? 50),
-            'repaired'     => (int)($data['repaired']     ?? 12000),
+            'repaired'     => (int)($data['repaired']     ?? 0),
             'satisfaction' => (int)($data['satisfaction'] ?? 98),
         ]
     ]);

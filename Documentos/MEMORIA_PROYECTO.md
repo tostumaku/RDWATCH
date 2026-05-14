@@ -71,6 +71,7 @@ Este documento mantiene un registro persistente del contexto, decisiones globale
 - [x] **Fix Persistencia de Dirección (13/05/2026):** Resolución integral del error donde el usuario perdía su ciudad/departamento al recargar el panel. Se sincronizaron las 3 capas: SQL (nuevos JOINs), PHP (envío de IDs de depto) y JS (población asíncrona de selectores en panel y checkout).
 - [x] **Ampliación de Detalles de Pedido Admin (13/05/2026):** Se integró la visualización del teléfono del cliente y el departamento geográfico de envío en el modal de detalles del pedido dentro del panel de administración. Esto implicó una actualización de 3 capas: se sumó un nuevo JOIN a `tab_Departamentos` en `fn_orders_list` (`ecommerce_core.sql`), se actualizó el mapeo de variables en `admin.js`, y se añadieron los campos estáticos al modal en `admin.html`.
 - [x] **Formateo de Fechas (13/05/2026):** Se eliminaron los milisegundos y el separador ISO 'T' de las fechas de pedidos mostradas en el panel administrativo y el panel de cliente mediante el uso de formateo `TO_CHAR(..., 'YYYY-MM-DD HH24:MI:SS')` en las funciones SQL (`fn_orders_list`, `fn_invoice_get_header`, `fn_user_get_orders`).
+- [x] **Actualización de Horarios y Estadísticas Reales (14/05/2026):** Se unificó el horario de atención de la tienda en la Landing Page con el panel del usuario. Adicionalmente, se corrigió un problema visual donde el contador de "Relojes Reparados" mostraba 0 a pesar de tener servicios solicitados. La solución consistió en modificar las funciones de base de datos (`fn_stats_public` y `fn_stats_dashboard`) para que el conteo incluya la suma de `tab_Orden_Servicios` (facturados) y `tab_Reservas` (citas con estado 'completada'). Se decidió además eliminar la base histórica ("legacy") de 12.000 relojes reparados tanto en BD como en los fallbacks de JS/PHP/HTML, para garantizar que el sistema muestre métricas 100% reales desde el día 1 de implementación del software.
 
 ## 🔮 6. Futuras Mejoras y Escalabilidad
 - **Integración de Chatbot con IA (Propuesta 08/05/2026):** Se evaluó la viabilidad de integrar un asistente virtual inteligente.
@@ -80,4 +81,4 @@ Este documento mantiene un registro persistente del contexto, decisiones globale
     - **Beneficio:** Atención 24/7 y experiencia de usuario premium (Concierge Digital).
 
 ---
-*Última edición técnica: Miércoles 13 Mayo 2026 — Corrección de persistencia geográfica y formateo de fechas en paneles.*
+*Última edición técnica: Jueves 14 Mayo 2026 — Actualización de horarios y refactorización de contador de estadísticas reales.*

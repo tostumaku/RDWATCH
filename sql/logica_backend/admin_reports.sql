@@ -92,8 +92,10 @@ BEGIN
 
     -- INDICADOR TÉCNICO: Relojes que han pasado por procesos de taller.
     BEGIN
-        SELECT COUNT(DISTINCT os.id_orden) INTO v_reparados
-        FROM tab_Orden_Servicios os;
+        SELECT 
+            (SELECT COUNT(DISTINCT id_orden) FROM tab_Orden_Servicios) + 
+            (SELECT COUNT(id_reserva) FROM tab_Reservas WHERE estado_reserva = 'completada')
+        INTO v_reparados;
     EXCEPTION WHEN OTHERS THEN
         v_reparados := 0; -- Resiliencia ante tablas de nexo vacías
     END;
@@ -370,9 +372,12 @@ DECLARE
     v_total_reviews INTEGER; -- N total de opiniones
     v_satisfied    INTEGER; -- N de 3+ estrellas
 BEGIN
-    -- PASO 1: Re-cálculo de órdenes de servicio procesadas.
+    -- PASO 1: Re-cálculo de órdenes de servicio procesadas + Reservas completadas.
     BEGIN
-        SELECT COUNT(DISTINCT os.id_orden) INTO v_reparados FROM tab_Orden_Servicios os;
+        SELECT 
+            (SELECT COUNT(DISTINCT id_orden) FROM tab_Orden_Servicios) + 
+            (SELECT COUNT(id_reserva) FROM tab_Reservas WHERE estado_reserva = 'completada')
+        INTO v_reparados;
     EXCEPTION WHEN OTHERS THEN
         v_reparados := 0;
     END;

@@ -42,13 +42,13 @@ async function loadStats() {
         } else {
             // Fallback: animate with default values already in HTML
             animateValue("stat-years", 0, 50, 2000);
-            animateValue("stat-repaired", 0, 12000, 2000);
+            animateValue("stat-repaired", 0, 0, 2000);
             animateValue("stat-satisfaction", 0, 98, 2000);
         }
     } catch (error) {
         console.error('Error loading stats:', error);
         animateValue("stat-years", 0, 50, 2000);
-        animateValue("stat-repaired", 0, 12000, 2000);
+        animateValue("stat-repaired", 0, 0, 2000);
         animateValue("stat-satisfaction", 0, 98, 2000);
     }
 }
