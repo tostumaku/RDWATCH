@@ -192,15 +192,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (ss) ss.textContent = String(servicios);
         if (svc) svc.textContent = String(ventas_cant);
         if (svm) svm.textContent = typeof formatPrice === 'function' ? formatPrice(ventas_monto) : '$' + ventas_monto.toLocaleString();
+        
+        if (data.chart_data) {
+          renderDashboardChart(data.chart_data);
+        }
       }
     } catch (error) {
       console.error("Error cargando estadísticas:", error);
     }
   }
 
-  function renderDashboard() {
-    cargarEstadisticas();
-
+  function renderDashboardChart(chart_data) {
     const ctx = document.getElementById("estadosChart");
     if (ctx && typeof Chart !== "undefined") {
       const estados = ["pendiente", "confirmado", "enviado", "cancelado"];
@@ -212,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       const labels = estados.map(e => mapping[e].label);
-      const counts = estados.map(e => pedidos.filter(p => p.estado === e).length);
+      const counts = estados.map(e => chart_data[e] || 0);
       const colors = estados.map(e => mapping[e].color);
 
       if (ctx._chartInstance) ctx._chartInstance.destroy();
@@ -238,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
             y: {
               beginAtZero: true,
               grid: { color: 'rgba(0,0,0,0.05)' },
-              ticks: { font: { family: 'Montserrat' } }
+              ticks: { font: { family: 'Montserrat' }, stepSize: 1 }
             },
             x: {
               grid: { display: false },
@@ -248,6 +250,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+  }
+
+  function renderDashboard() {
+    cargarEstadisticas();
   }
 
   /* =======================
@@ -546,10 +552,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchFilter = document.getElementById("buscarPedido")?.value.toLowerCase() || "";
 
     const filtered = list.filter(p => {
-      const matchStatus = !statusFilter || p.estado.toLowerCase() === statusFilter.toLowerCase();
+      const matchStatus = !statusFilter || (p.estado || "").toLowerCase() === statusFilter.toLowerCase();
       const matchSearch = !searchFilter ||
-        p.cliente.toLowerCase().includes(searchFilter) ||
-        p.id.toString().includes(searchFilter);
+        (p.cliente || "").toLowerCase().includes(searchFilter) ||
+        (p.id?.toString() || "").includes(searchFilter);
       return matchStatus && matchSearch;
     });
 
