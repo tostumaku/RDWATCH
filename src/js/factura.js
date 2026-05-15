@@ -101,13 +101,13 @@ async function cargarFactura() {
         facturaContent.getElementById('cliente-email').textContent = dataFactura.factura.correo_usuario;
         facturaContent.getElementById('cliente-telefono').textContent = dataFactura.factura.num_telefono_usuario;
 
-        // Dirección de envío - Extraer del campo concepto que tiene formato "Envío a: dirección (metodo)"
-        let direccionEnvio = dataFactura.factura.direccion_principal || 'No especificada';
-        if (dataFactura.factura.concepto) {
-            const match = dataFactura.factura.concepto.match(/Envío a: (.+?) \(/);
-            if (match && match[1]) {
-                direccionEnvio = match[1];
-            }
+        // Dirección de envío - Ahora viene directamente del JOIN con tab_Envios → tab_Direcciones_Envio
+        let direccionEnvio = dataFactura.factura.direccion_envio || 'No especificada';
+        if (dataFactura.factura.ciudad_envio) {
+            direccionEnvio += ', ' + dataFactura.factura.ciudad_envio;
+        }
+        if (dataFactura.factura.departamento_envio) {
+            direccionEnvio += ' - ' + dataFactura.factura.departamento_envio;
         }
         facturaContent.getElementById('cliente-direccion').textContent = direccionEnvio;
 
